@@ -9,6 +9,7 @@ function EditForm() {
   const [saving, setSaving] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
   const [fields, setFields] = useState([]);
+  const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
     fetch(`/api/forms/${id}`)
@@ -91,10 +92,172 @@ function EditForm() {
 
   const selectedFieldData = fields.find(f => f.id === selectedField);
 
+  const renderPreviewField = (field, index) => {
+    const fieldName = field.id || `field_${index}`;
+    const description = field.description || `Question ${index + 1}`;
+
+    switch (field.type) {
+      case 'text':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="text"
+              disabled
+              style={{ width: '100%', padding: '8px', marginTop: '5px', backgroundColor: '#f5f5f5' }}
+            />
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <textarea
+              disabled
+              rows={4}
+              style={{ width: '100%', padding: '8px', marginTop: '5px', backgroundColor: '#f5f5f5' }}
+            />
+          </div>
+        );
+
+      case 'radio':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <div style={{ marginTop: '5px' }}>
+              {field.options?.map((option, optIndex) => (
+                <div key={optIndex} style={{ marginBottom: '5px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      disabled
+                      style={{ marginRight: '8px' }}
+                    />
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'checkbox':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <div style={{ marginTop: '5px' }}>
+              {field.options?.map((option, optIndex) => (
+                <div key={optIndex} style={{ marginBottom: '5px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      disabled
+                      style={{ marginRight: '8px' }}
+                    />
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'file':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="file"
+              disabled
+              accept={field.accept}
+              style={{ width: '100%', padding: '8px', marginTop: '5px', backgroundColor: '#f5f5f5' }}
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  if (previewMode) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h1>{form.name}</h1>
+          <button onClick={() => setPreviewMode(false)} style={{ padding: '8px 16px' }}>
+            Exit Preview
+          </button>
+        </div>
+        <div style={{ border: '1px solid #ccc', padding: '20px', borderRadius: '5px', backgroundColor: 'white' }}>
+          {fields.length === 0 ? (
+            <p>No fields yet. Add fields to see preview.</p>
+          ) : (
+            fields.map((field, index) => renderPreviewField(field, index))
+          )}
+          <button 
+            disabled 
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              backgroundColor: '#ccc',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'not-allowed',
+              marginTop: '20px'
+            }}
+          >
+            Submit Application (Preview)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', gap: '20px', padding: '20px' }}>
       <div style={{ flex: 1 }}>
-        <h1>Edit Form: {form.name}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h1>Edit Form: {form.name}</h1>
+          <button 
+            onClick={() => setPreviewMode(true)} 
+            style={{ padding: '8px 16px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+          >
+            Preview
+          </button>
+        </div>
         
         <div style={{ marginBottom: '20px' }}>
           <h3>Add Field</h3>
