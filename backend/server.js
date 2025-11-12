@@ -258,6 +258,214 @@ app.post('/api/forms/public/:publicId/submit', async (req, res) => {
   }
 });
 
+app.get('/api/events', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM events ORDER BY position ASC, id ASC'
+    );
+    
+    const acceptanceEvent = result.rows.find(e => e.name === 'Acceptance');
+    const nonAcceptanceEvents = result.rows.filter(e => e.name !== 'Acceptance');
+    
+    const sortedEvents = [...nonAcceptanceEvents];
+    if (acceptanceEvent) {
+      sortedEvents.push(acceptanceEvent);
+    }
+    
+    res.json(sortedEvents);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/events', async (req, res) => {
+  try {
+    const { name, event_date, position } = req.body;
+    if (!name || !event_date) {
+      return res.status(400).json({ error: 'name and event_date are required' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO events (name, event_date, position, is_system)
+       VALUES ($1, $2, $3, FALSE)
+       RETURNING *`,
+      [name, event_date, position || 1]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, event_date, position } = req.body;
+
+    const eventCheck = await pool.query('SELECT is_system FROM events WHERE id = $1', [id]);
+    if (eventCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    if (eventCheck.rows[0].is_system) {
+      return res.status(403).json({ error: 'System events cannot be modified' });
+    }
+
+    const result = await pool.query(
+      `UPDATE events 
+       SET name = COALESCE($1, name),
+           event_date = COALESCE($2::date, event_date),
+           position = COALESCE($3, position),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`,
+      [name, event_date, position, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/events/reorder', async (req, res) => {
+  try {
+    const { events } = req.body;
+    if (!Array.isArray(events)) {
+      return res.status(400).json({ error: 'events array is required' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      let maxPosition = Math.max(...events.map(e => e.position));
+      
+      for (const event of events) {
+        const eventCheck = await client.query('SELECT name FROM events WHERE id = $1', [event.id]);
+        const eventName = eventCheck.rows[0]?.name;
+        
+        if (eventName === 'Acceptance') {
+          await client.query(
+            'UPDATE events SET position = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [maxPosition, event.id]
+          );
+        } else {
+          await client.query(
+            'UPDATE events SET position = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [event.position, event.id]
+          );
+        }
+      }
+      
+      await client.query('COMMIT');
+      res.json({ message: 'Events reordered successfully' });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'DELETE FROM events WHERE id = $1 AND is_system = FALSE RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found or cannot be deleted' });
+    }
+
+    res.json({ message: 'Event deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/:id/form', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT form_id FROM events WHERE id = $1',
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const formId = result.rows[0].form_id;
+    if (!formId) {
+      return res.json({ form_id: null });
+    }
+
+    const formResult = await pool.query(
+      'SELECT * FROM forms WHERE id = $1',
+      [formId]
+    );
+    res.json({ form_id: formId, form: formResult.rows[0] || null });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/events/:id/form', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, definition } = req.body;
+
+    const eventResult = await pool.query(
+      'SELECT form_id FROM events WHERE id = $1',
+      [id]
+    );
+
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const existingFormId = eventResult.rows[0].form_id;
+
+    if (existingFormId) {
+      const formResult = await pool.query(
+        'SELECT * FROM forms WHERE id = $1',
+        [existingFormId]
+      );
+      return res.json(formResult.rows[0]);
+    }
+
+    const publicId = generateId();
+    const adminId = 'admin_' + generateId();
+    const formName = name || 'Application Form';
+
+    const formResult = await pool.query(
+      `INSERT INTO forms (name, public_id, admin_id, definition) 
+       VALUES ($1, $2, $3, $4) 
+       RETURNING *`,
+      [formName, publicId, adminId, JSON.stringify(definition || { fields: [] })]
+    );
+
+    await pool.query(
+      'UPDATE events SET form_id = $1 WHERE id = $2',
+      [formResult.rows[0].id, id]
+    );
+
+    res.json(formResult.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

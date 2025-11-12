@@ -28,7 +28,7 @@ function ViewResponses() {
   if (!form) return <div>Form not found</div>;
 
   return (
-    <div>
+    <div style={{ padding: '20px', paddingBottom: '70px' }}>
       <h1>Responses: {form.name}</h1>
       <Link to={`/admin/forms/${id}/edit`}>Edit Form</Link>
       {' | '}

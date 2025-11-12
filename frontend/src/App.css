@@ -1,0 +1,5 @@
+/* Ensure content isn't hidden behind bottom navigation */
+body {
+  padding-bottom: 60px;
+}
+

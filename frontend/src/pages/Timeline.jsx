@@ -386,7 +386,7 @@ function Timeline() {
   const sortedEvents = [...nonAcceptanceEvents, acceptanceEvent].filter(Boolean);
 
   return (
-    <div style={{ padding: '40px 20px' }}>
+    <div style={{ padding: '40px 20px', paddingBottom: '70px' }}>
       <h1>Event Timeline</h1>
       
       <button

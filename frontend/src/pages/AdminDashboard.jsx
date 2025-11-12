@@ -52,7 +52,7 @@ function AdminDashboard() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div>
+    <div style={{ padding: '20px', paddingBottom: '70px' }}>
       <h1>Form Dashboard</h1>
       <Link to="/admin/forms/new">
         <button>Create New Form</button>
