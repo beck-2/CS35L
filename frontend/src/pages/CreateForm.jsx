@@ -29,7 +29,7 @@ function CreateForm() {
   };
 
   return (
-    <div>
+    <div style={{ padding: '20px', paddingBottom: '70px' }}>
       <h1>Create New Form</h1>
       <form onSubmit={handleSubmit}>
         <label>
