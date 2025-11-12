@@ -203,14 +203,37 @@ app.post('/api/forms/public/:publicId/submit', async (req, res) => {
 
     const formId = formResult.rows[0].id;
 
+    const processedData = { ...response_data };
+    const fileReferences = {};
+
+    for (const [key, value] of Object.entries(response_data)) {
+      if (typeof value === 'string' && value.startsWith('data:')) {
+        const base64Data = value;
+        const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimeType = matches[1];
+          const base64Content = matches[2];
+          const filename = `upload_${Date.now()}_${key}.${mimeType.split('/')[1] || 'bin'}`;
+          
+          const fileResult = await pool.query(
+            'INSERT INTO files (filename, content) VALUES ($1, $2) RETURNING id',
+            [filename, base64Content]
+          );
+          
+          fileReferences[key] = fileResult.rows[0].id;
+          processedData[key] = `file:${fileResult.rows[0].id}`;
+        }
+      }
+    }
+
     const result = await pool.query(
       `INSERT INTO form_responses (form_id, response_data, applicant_name, applicant_email)
        VALUES ($1, $2, $3, $4)
        RETURNING id, form_id, submitted_at`,
-      [formId, JSON.stringify(response_data), applicant_name || null, applicant_email || null]
+      [formId, JSON.stringify(processedData), applicant_name || null, applicant_email || null]
     );
 
-    res.json(result.rows[0]);
+    res.json({ ...result.rows[0], file_references: fileReferences });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
