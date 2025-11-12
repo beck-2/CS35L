@@ -171,6 +171,25 @@ app.put('/api/forms/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/forms/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'DELETE FROM forms WHERE id = $1 RETURNING id, name',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Form not found' });
+    }
+
+    res.json({ message: 'Form deleted successfully', deleted: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/forms/:id/responses', async (req, res) => {
   try {
     const { id } = req.params;
