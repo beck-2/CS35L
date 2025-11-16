@@ -44,7 +44,7 @@ const colorStyles = {
   },
 };
 
-function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onEventClick }) {
+function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onEventClick, selectedEventId, onEventSelect }) {
   const {
     attributes,
     listeners,
@@ -55,7 +55,7 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
   } = useSortable({ id: event.id });
 
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const isSelected = selectedEventId === event.id;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -77,8 +77,12 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
       // Application events still navigate to form
       handleClick(e);
     } else {
-      // Other events toggle expansion
+      // Other events toggle expansion and select this event
       setIsExpanded(!isExpanded);
+      if (onEventSelect) {
+        // If clicking the same event, deselect; otherwise select the new one
+        onEventSelect(isSelected ? null : event.id);
+      }
       if (onEventClick) {
         onEventClick(event);
       }
@@ -139,10 +143,8 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
         ...style,
         position: 'relative',
         flexShrink: 0,
-        width: '180px',
+        width: '150px',
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         style={{
@@ -171,7 +173,7 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
             backgroundColor: '#ffffff',
             borderRadius: '16px',
             padding: '24px',
-            width: '180px',
+            width: '150px',
             boxShadow: isDragging 
               ? `0 8px 30px ${colors.shadow}` 
               : '0 2px 20px rgba(0,0,0,0.06)',
@@ -309,20 +311,20 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
                 <div
                   style={{
                     fontSize: '12px',
-                    color: '#007bff',
+                    color: '#4D7298',
                     fontWeight: '500',
                     marginTop: '4px',
                   }}
                 >
-                  Form configured
+                  Click to view form
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Edit/Delete buttons - only show on hover, positioned below card */}
-        {!event.is_system && isHovered && (
+        {/* Edit/Delete buttons - only show when selected, positioned below card */}
+        {!event.is_system && isSelected && (
           <div
             style={{
               position: 'absolute',
@@ -439,6 +441,7 @@ function Timeline() {
   const [newEventNotes, setNewEventNotes] = useState('');
   const [newEventMembersOnly, setNewEventMembersOnly] = useState(false);
   const [newEventLocation, setNewEventLocation] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState(null);
   const scrollContainerRef = useRef(null);
   
   const scrollLeft = () => {
@@ -629,6 +632,7 @@ function Timeline() {
         throw new Error(errorMessage);
       }
 
+      setSelectedEventId(null); // Deselect after deleting
       fetchEvents();
     } catch (error) {
       console.error('Error deleting event:', error);
@@ -882,8 +886,11 @@ function Timeline() {
                             setNewEventMembersOnly(e.members_only || false);
                             setNewEventLocation(e.location || '');
                             setShowAddModal(true);
+                            setSelectedEventId(null); // Deselect when editing
                           }}
                           onFormClick={handleFormClick}
+                          selectedEventId={selectedEventId}
+                          onEventSelect={setSelectedEventId}
                         />
                       ))}
                     </div>
