@@ -280,16 +280,16 @@ app.get('/api/events', async (req, res) => {
 
 app.post('/api/events', async (req, res) => {
   try {
-    const { name, event_date, position } = req.body;
+    const { name, event_date, position, notes, members_only, location } = req.body;
     if (!name || !event_date) {
       return res.status(400).json({ error: 'name and event_date are required' });
     }
 
     const result = await pool.query(
-      `INSERT INTO events (name, event_date, position, is_system)
-       VALUES ($1, $2, $3, FALSE)
+      `INSERT INTO events (name, event_date, position, is_system, notes, members_only, location)
+       VALUES ($1, $2, $3, FALSE, $4, $5, $6)
        RETURNING *`,
-      [name, event_date, position || 1]
+      [name, event_date, position || 1, notes || null, members_only || false, location || null]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -300,7 +300,7 @@ app.post('/api/events', async (req, res) => {
 app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, event_date, position } = req.body;
+    const { name, event_date, position, notes, members_only, location } = req.body;
 
     const eventCheck = await pool.query('SELECT is_system FROM events WHERE id = $1', [id]);
     if (eventCheck.rows.length === 0) {
@@ -311,15 +311,60 @@ app.put('/api/events/:id', async (req, res) => {
       return res.status(403).json({ error: 'System events cannot be modified' });
     }
 
+    // Build update query dynamically based on provided fields
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramIndex}`);
+      values.push(name);
+      paramIndex++;
+    }
+
+    if (event_date !== undefined) {
+      updates.push(`event_date = $${paramIndex}::date`);
+      values.push(event_date);
+      paramIndex++;
+    }
+
+    if (position !== undefined) {
+      updates.push(`position = $${paramIndex}`);
+      values.push(position);
+      paramIndex++;
+    }
+
+    if (notes !== undefined) {
+      updates.push(`notes = $${paramIndex}`);
+      values.push(notes === '' ? null : notes);
+      paramIndex++;
+    }
+
+    if (members_only !== undefined) {
+      updates.push(`members_only = $${paramIndex}`);
+      values.push(members_only);
+      paramIndex++;
+    }
+
+    if (location !== undefined) {
+      updates.push(`location = $${paramIndex}`);
+      values.push(location === '' ? null : location);
+      paramIndex++;
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
     const result = await pool.query(
       `UPDATE events 
-       SET name = COALESCE($1, name),
-           event_date = COALESCE($2::date, event_date),
-           position = COALESCE($3, position),
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $4
+       SET ${updates.join(', ')}
+       WHERE id = $${paramIndex}
        RETURNING *`,
-      [name, event_date, position, id]
+      values
     );
 
     if (result.rows.length === 0) {
@@ -327,6 +372,7 @@ app.put('/api/events/:id', async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (error) {
+    console.error('Error updating event:', error);
     res.status(500).json({ error: error.message });
   }
 });

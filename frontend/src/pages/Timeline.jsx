@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -18,8 +18,33 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { FileText, Search, Phone, Users, CheckCircle, Briefcase, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 
-function SortableEvent({ event, onDelete, onEdit, onFormClick }) {
+// Color styles matching Figma design
+const colorStyles = {
+  light: {
+    bg: '#9DC3C2',
+    shadow: 'rgba(157,195,194,0.2)',
+    glow: 'rgba(157,195,194,0.4)',
+  },
+  medium: {
+    bg: '#77A6B6',
+    shadow: 'rgba(119,166,182,0.2)',
+    glow: 'rgba(119,166,182,0.4)',
+  },
+  dark: {
+    bg: '#4D7298',
+    shadow: 'rgba(77,114,152,0.2)',
+    glow: 'rgba(77,114,152,0.4)',
+  },
+  accent: {
+    bg: '#84BF5F',
+    shadow: 'rgba(132,191,95,0.2)',
+    glow: 'rgba(132,191,95,0.4)',
+  },
+};
+
+function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onEventClick }) {
   const {
     attributes,
     listeners,
@@ -29,6 +54,9 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick }) {
     isDragging,
   } = useSortable({ id: event.id });
 
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -36,12 +64,26 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick }) {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const hasForm = event.form_id !== null;
   const isApplication = event.name === 'Application';
+
+  const handleCardClick = (e) => {
+    if (isApplication) {
+      // Application events still navigate to form
+      handleClick(e);
+    } else {
+      // Other events toggle expansion
+      setIsExpanded(!isExpanded);
+      if (onEventClick) {
+        onEventClick(event);
+      }
+    }
+  };
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -53,68 +95,244 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick }) {
     }
   };
 
+  const truncateText = (text, maxLength = 60) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  // Get icon and color based on event
+  const getIconAndColor = () => {
+    if (isApplication) {
+      return { Icon: FileText, color: 'light' };
+    }
+    if (event.name === 'Acceptance') {
+      return { Icon: CheckCircle, color: 'accent' };
+    }
+    const nameLower = event.name.toLowerCase();
+    if (nameLower.includes('interview') || nameLower.includes('phone')) {
+      return { Icon: Phone, color: 'dark' };
+    }
+    if (nameLower.includes('screening') || nameLower.includes('review')) {
+      return { Icon: Search, color: 'medium' };
+    }
+    if (nameLower.includes('team') || nameLower.includes('group')) {
+      return { Icon: Users, color: 'medium' };
+    }
+    if (nameLower.includes('final') || nameLower.includes('executive')) {
+      return { Icon: Briefcase, color: 'dark' };
+    }
+    return { Icon: FileText, color: 'medium' };
+  };
+
+  const { Icon, color } = getIconAndColor();
+  const colors = colorStyles[color] || colorStyles.medium;
+  
+  // Alternate top/bottom positions
+  const isTop = index % 2 === 0;
+  const stageNumber = index + 1;
+
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        position: 'relative',
+        flexShrink: 0,
+        width: '180px',
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          position: 'relative',
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          ...(isTop ? { bottom: '50%', marginBottom: '48px' } : { top: '50%', marginTop: '48px' }),
         }}
       >
+        {/* Connecting line to center */}
         <div
           style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            backgroundColor: isApplication ? '#007bff' : 
-                           event.name === 'Acceptance' ? '#28a745' : '#6c757d',
-            border: hasForm && isApplication ? '3px solid #ffc107' : '3px solid transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '12px',
-            textAlign: 'center',
-            padding: '5px',
-            cursor: isDragging ? 'grabbing' : (isApplication ? 'pointer' : 'grab'),
-            boxShadow: isDragging ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-            position: 'relative',
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '1px',
+            height: '48px',
+            backgroundColor: '#e5e5e5',
+            ...(isTop ? { top: '100%' } : { bottom: '100%' }),
           }}
-          title={isApplication ? 'Click to edit form' : 'Drag to reorder'}
-          onClick={isApplication ? handleClick : undefined}
-          {...(isApplication ? {} : { ...attributes, ...listeners })}
+        />
+
+        {/* Event Card */}
+        <div
+          style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            width: '180px',
+            boxShadow: isDragging 
+              ? `0 8px 30px ${colors.shadow}` 
+              : '0 2px 20px rgba(0,0,0,0.06)',
+            border: '1px solid #f5f5f4',
+            cursor: isDragging ? 'grabbing' : 'pointer',
+            transition: 'all 0.3s ease',
+            transform: isDragging ? 'none' : 'translateY(0)',
+            position: 'relative',
+            ...(isApplication ? {} : { ...attributes, ...listeners }),
+          }}
+          title={isApplication ? 'Click to edit form' : 'Click to view details'}
+          onClick={handleCardClick}
+          onMouseEnter={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,0,0,0.1)';
+              e.currentTarget.style.transform = 'translateY(-4px)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.boxShadow = '0 2px 20px rgba(0,0,0,0.06)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }
+          }}
         >
-          {event.name}
-          {isApplication && (
+          {/* Members only lock icon */}
+          {event.members_only && (
             <div
               style={{
                 position: 'absolute',
-                bottom: '-20px',
-                fontSize: '10px',
-                color: '#007bff',
-                fontWeight: 'normal',
-                whiteSpace: 'nowrap',
-                pointerEvents: 'none',
+                top: '12px',
+                left: '12px',
+                zIndex: 2,
               }}
             >
-              Click to edit
+              <Lock size={14} color="#9ca3af" strokeWidth={2} />
             </div>
           )}
-        </div>
-        {event.name !== 'Acceptance' && (
-          <div style={{ marginTop: isApplication ? '25px' : '8px', fontSize: '12px', color: '#666' }}>
-            {formatDate(event.event_date)}
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: '16px',
+            }}
+          >
+            {/* Icon */}
+            <div
+              style={{
+                backgroundColor: colors.bg,
+                borderRadius: '50%',
+                padding: '14px',
+                boxShadow: `0 8px 30px ${colors.shadow}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'transform 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isDragging) {
+                  e.currentTarget.style.transform = 'scale(1.08)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <Icon size={20} color="white" strokeWidth={1.5} />
+            </div>
+
+            {/* Content */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+              <div
+                style={{
+                  color: '#a3a3a3',
+                  fontSize: '13px',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  fontWeight: '500',
+                }}
+              >
+                STAGE {stageNumber}
+              </div>
+              <div
+                style={{
+                  color: '#0a0a0a',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {event.name}
+              </div>
+              {event.name !== 'Acceptance' && event.event_date && (
+                <div
+                  style={{
+                    color: '#737373',
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                  }}
+                >
+                  <span>{formatDate(event.event_date)}</span>
+                  {event.location && (
+                    <span style={{ fontSize: '13px' }}>{event.location}</span>
+                  )}
+                </div>
+              )}
+              {event.notes && (
+                <div
+                  style={{
+                    marginTop: '8px',
+                    color: '#737373',
+                    fontSize: '12px',
+                    lineHeight: '1.4',
+                    maxHeight: isExpanded ? 'none' : '40px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    cursor: 'pointer',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }}
+                  title={event.notes}
+                >
+                  {isExpanded ? event.notes : truncateText(event.notes)}
+                </div>
+              )}
+              {isApplication && hasForm && (
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#007bff',
+                    fontWeight: '500',
+                    marginTop: '4px',
+                  }}
+                >
+                  Form configured
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        {!event.is_system && (
-          <div 
-            style={{ marginTop: '5px', display: 'flex', gap: '5px' }}
+        </div>
+
+        {/* Edit/Delete buttons - only show on hover, positioned below card */}
+        {!event.is_system && isHovered && (
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              top: '100%',
+              marginTop: '6px',
+              display: 'flex',
+              gap: '6px',
+            }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
@@ -129,13 +347,20 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick }) {
                 e.stopPropagation();
               }}
               style={{
-                fontSize: '10px',
-                padding: '2px 6px',
-                border: '1px solid #ccc',
-                borderRadius: '3px',
+                fontSize: '11px',
+                padding: '6px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 backgroundColor: 'white',
-                pointerEvents: 'auto',
+                color: '#666',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f5f5f5';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
               }}
             >
               Edit
@@ -151,20 +376,53 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick }) {
                 e.stopPropagation();
               }}
               style={{
-                fontSize: '10px',
-                padding: '2px 6px',
-                border: '1px solid #ccc',
-                borderRadius: '3px',
+                fontSize: '11px',
+                padding: '6px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 backgroundColor: 'white',
-                color: 'red',
-                pointerEvents: 'auto',
+                color: '#dc3545',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fee';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
               }}
             >
               Delete
             </button>
           </div>
         )}
+      </div>
+
+      {/* Center dot on timeline */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <div
+          style={{
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: colors.bg,
+            boxShadow: `0 0 20px ${colors.glow}`,
+            transition: 'transform 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        />
       </div>
     </div>
   );
@@ -178,6 +436,22 @@ function Timeline() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [newEventName, setNewEventName] = useState('');
   const [newEventDate, setNewEventDate] = useState('');
+  const [newEventNotes, setNewEventNotes] = useState('');
+  const [newEventMembersOnly, setNewEventMembersOnly] = useState(false);
+  const [newEventLocation, setNewEventLocation] = useState('');
+  const scrollContainerRef = useRef(null);
+  
+  const scrollLeft = () => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollBy({ left: -400, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollBy({ left: 400, behavior: 'smooth' });
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -265,6 +539,9 @@ function Timeline() {
           name: newEventName,
           event_date: newEventDate,
           position,
+          notes: newEventNotes || null,
+          members_only: newEventMembersOnly,
+          location: newEventLocation || null,
         }),
       });
 
@@ -273,6 +550,9 @@ function Timeline() {
       setShowAddModal(false);
       setNewEventName('');
       setNewEventDate('');
+      setNewEventNotes('');
+      setNewEventMembersOnly(false);
+      setNewEventLocation('');
       fetchEvents();
     } catch (error) {
       console.error('Error adding event:', error);
@@ -290,6 +570,9 @@ function Timeline() {
         body: JSON.stringify({
           name: newEventName,
           event_date: newEventDate,
+          notes: newEventNotes || null,
+          members_only: newEventMembersOnly,
+          location: newEventLocation || null,
         }),
       });
 
@@ -309,6 +592,9 @@ function Timeline() {
       setEditingEvent(null);
       setNewEventName('');
       setNewEventDate('');
+      setNewEventNotes('');
+      setNewEventMembersOnly(false);
+      setNewEventLocation('');
       fetchEvents();
     } catch (error) {
       console.error('Error updating event:', error);
@@ -379,172 +665,363 @@ function Timeline() {
     }
   };
 
-  if (loading) return <div>Loading timeline...</div>;
+  if (loading) {
+    return (
+      <div style={{ 
+        padding: '40px 20px', 
+        paddingTop: '100px',
+        backgroundColor: '#F5FCEE',
+        minHeight: '100vh',
+      }}>
+        <div>Loading timeline...</div>
+      </div>
+    );
+  }
 
   const acceptanceEvent = events.find(e => e.name === 'Acceptance');
   const nonAcceptanceEvents = events.filter(e => e.name !== 'Acceptance');
   const sortedEvents = [...nonAcceptanceEvents, acceptanceEvent].filter(Boolean);
 
   return (
-    <div style={{ padding: '40px 20px', paddingBottom: '70px' }}>
-      <h1>Event Timeline</h1>
-      
-      <button
-        onClick={() => {
-          setShowAddModal(true);
-          setEditingEvent(null);
-          setNewEventName('');
-          setNewEventDate('');
-        }}
-        style={{
-          marginBottom: '30px',
-          padding: '10px 20px',
-          backgroundColor: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-        }}
-      >
-        Add Event
-      </button>
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={sortedEvents.map(e => e.id)}
-          strategy={horizontalListSortingStrategy}
-        >
-          <div
+    <div style={{ 
+      backgroundColor: '#F5FCEE',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <div style={{ 
+        maxWidth: '1800px', 
+        margin: '0 auto', 
+        width: '100%', 
+        height: '100%',
+        display: 'flex', 
+        flexDirection: 'column',
+        padding: '90px 20px 10px 20px',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}>
+        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <h1 style={{ 
+              color: '#2d3436', 
+              marginBottom: '4px', 
+              fontSize: '32px',
+              fontWeight: '600',
+              letterSpacing: '-0.02em',
+            }}>
+              Event timeline
+            </h1>
+            <p style={{ color: '#636e72', fontSize: '16px', margin: 0 }}>
+              Add events and share them with your team
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setShowAddModal(true);
+              setEditingEvent(null);
+              setNewEventName('');
+              setNewEventDate('');
+              setNewEventNotes('');
+              setNewEventMembersOnly(false);
+              setNewEventLocation('');
+            }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '40px',
-              padding: '40px 20px',
-              overflowX: 'auto',
-              minHeight: '200px',
+              padding: '10px 20px',
+              backgroundColor: '#4D7298',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              fontSize: '14px',
+              height: 'fit-content',
             }}
           >
-            {sortedEvents.map((event, index) => (
-              <div key={event.id} style={{ display: 'flex', alignItems: 'center' }}>
-                <SortableEvent
-                  event={event}
-                  onDelete={handleDeleteEvent}
-                  onEdit={(e) => {
-                    setEditingEvent(e);
-                    setNewEventName(e.name);
-                    const dateStr = e.event_date ? new Date(e.event_date).toISOString().split('T')[0] : '';
-                    setNewEventDate(dateStr);
-                    setShowAddModal(true);
+            Add Event
+          </button>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sortedEvents.map(e => e.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0,
+                  overflow: 'hidden',
+                }}
+              >
+              {/* Left Arrow */}
+              <button
+                onClick={scrollLeft}
+                style={{
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 10,
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              >
+                <ChevronLeft size={20} color="#666" />
+              </button>
+
+              {/* Right Arrow */}
+              <button
+                onClick={scrollRight}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 10,
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              >
+                <ChevronRight size={20} color="#666" />
+              </button>
+
+              <div
+                ref={scrollContainerRef}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9DC3C2 #f5f5f5',
+                }}
+              >
+                <div
+                  style={{
+                    minWidth: 'max-content',
+                    padding: '0 60px',
+                    height: '100%',
                   }}
-                  onFormClick={handleFormClick}
-                />
-                {index < sortedEvents.length - 1 && (
+                >
                   <div
                     style={{
-                      width: '60px',
-                      height: '2px',
-                      backgroundColor: '#ccc',
-                      marginLeft: '20px',
+                      position: 'relative',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+                  >
+                    {/* Gradient line */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        background: 'linear-gradient(to right, transparent, #9DC3C2, transparent)',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                      }}
+                    />
 
-      {(showAddModal || editingEvent) && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => {
-            setShowAddModal(false);
-            setEditingEvent(null);
-            setNewEventName('');
-            setNewEventDate('');
-          }}
-        >
+                    {/* Events */}
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        alignItems: 'center',
+                        gap: '64px',
+                      }}
+                    >
+                      {sortedEvents.map((event, index) => (
+                        <SortableEvent
+                          key={event.id}
+                          event={event}
+                          index={index}
+                          total={sortedEvents.length}
+                          onDelete={handleDeleteEvent}
+                          onEdit={(e) => {
+                            setEditingEvent(e);
+                            setNewEventName(e.name);
+                            const dateStr = e.event_date ? new Date(e.event_date).toISOString().split('T')[0] : '';
+                            setNewEventDate(dateStr);
+                            setNewEventNotes(e.notes || '');
+                            setNewEventMembersOnly(e.members_only || false);
+                            setNewEventLocation(e.location || '');
+                            setShowAddModal(true);
+                          }}
+                          onFormClick={handleFormClick}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SortableContext>
+        </DndContext>
+        </div>
+
+        {/* Add/Edit Modal */}
+        {(showAddModal || editingEvent) && (
           <div
-            onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: 'white',
-              padding: '30px',
-              borderRadius: '8px',
-              minWidth: '300px',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+            onClick={() => {
+              setShowAddModal(false);
+              setEditingEvent(null);
+              setNewEventName('');
+              setNewEventDate('');
+              setNewEventNotes('');
+              setNewEventMembersOnly(false);
+              setNewEventLocation('');
             }}
           >
-            <h2>{editingEvent ? 'Edit Event' : 'Add Event'}</h2>
-            <div style={{ marginBottom: '15px' }}>
-              <label>
-                Event Name:
-                <input
-                  type="text"
-                  value={newEventName}
-                  onChange={(e) => setNewEventName(e.target.value)}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-                  placeholder="e.g., Interview"
-                />
-              </label>
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label>
-                Event Date:
-                <input
-                  type="date"
-                  value={newEventDate}
-                  onChange={(e) => setNewEventDate(e.target.value)}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-                  required
-                />
-              </label>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingEvent(null);
-                  setNewEventName('');
-                  setNewEventDate('');
-                }}
-                style={{ padding: '8px 16px' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={editingEvent ? handleEditEvent : handleAddEvent}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                }}
-              >
-                {editingEvent ? 'Save' : 'Add'}
-              </button>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: 'white',
+                padding: '30px',
+                borderRadius: '8px',
+                minWidth: '300px',
+              }}
+            >
+              <h2>{editingEvent ? 'Edit Event' : 'Add Event'}</h2>
+              <div style={{ marginBottom: '15px' }}>
+                <label>
+                  Event Name:
+                  <input
+                    type="text"
+                    value={newEventName}
+                    onChange={(e) => setNewEventName(e.target.value)}
+                    style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+                    placeholder="e.g., Interview"
+                  />
+                </label>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label>
+                  Event Date:
+                  <input
+                    type="date"
+                    value={newEventDate}
+                    onChange={(e) => setNewEventDate(e.target.value)}
+                    style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+                    required
+                  />
+                </label>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label>
+                  Location (optional):
+                  <input
+                    type="text"
+                    value={newEventLocation}
+                    onChange={(e) => setNewEventLocation(e.target.value)}
+                    style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+                    placeholder="e.g., Conference Room A, Zoom"
+                  />
+                </label>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label>
+                  Notes (optional):
+                  <textarea
+                    value={newEventNotes}
+                    onChange={(e) => setNewEventNotes(e.target.value)}
+                    style={{ width: '100%', padding: '8px', marginTop: '5px', minHeight: '80px', resize: 'vertical' }}
+                    placeholder="Add any notes about this event..."
+                  />
+                </label>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={newEventMembersOnly}
+                    onChange={(e) => setNewEventMembersOnly(e.target.checked)}
+                  />
+                  <span>Members only (visible to members only)</span>
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingEvent(null);
+                    setNewEventName('');
+                    setNewEventDate('');
+                    setNewEventNotes('');
+                    setNewEventMembersOnly(false);
+                    setNewEventLocation('');
+                  }}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={editingEvent ? handleEditEvent : handleAddEvent}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#4D7298',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {editingEvent ? 'Save' : 'Add'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 export default Timeline;
-

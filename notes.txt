@@ -1,0 +1,36 @@
+Form builder notes
+-should be able to create form, edit an old one, and publish a form
+-lowkey like google forms, I want a little plus button at the bottom, then you get a dropdown menu for what to add in next
+basically copy google forms functionality
+
+
+We need:
+a really really good way to view the data
+a way to tag who should review certain applications and whether they're accepted or rejected
+
+Application form builder
+
+Once you make an application form, it automatically populates in the events timeline as "application stage" with the due date
+also automatically populated is "accepted", and the arrow goes to accepted
+    if you haven't yet made an application form, it prompts you to
+can add more events in between the two or before the application, but acceptance is always last
+then we have a nice visual of how many people applied vs how many go to the next stage (start with a gray bar, then fill in with green
+and red as more decisions are made)
+
+
+automatic decisions
+have a confirm decisions for this stage button, that has a "are you sure??" lets you email applicants, also if you haven't made decisions
+yet (some are grey) it'll notify you about that and won't email any of them, unless you tell it to
+    could also add additional functionality where you can go into who it's emailing, and unselect certain people (bruh thats so extra)
+gotta be able to write a message, but coming from an email adress??? lowkeyyy you could also just allow them to easily export names or 
+emails of the acceptances and let the user handle it
+
+
+Hey, I have an idea. I think the creator should start on an event timeline. The event timeline is initially populated with two round bubbles symbolizing events, first on the left there's "application", then an arrow pointing to "acceptance". It is the event that is in charge of the form and the decisions for that round. For now, only the "application" event should be able to have a form. It may only have one form. If the user clicks on it, it brings them to the form builder view. Do you think we should bring them directly to the page where they can add questions, or is it still worth it to have that main page?
+
+
+Extra features:
+Add a little "application form released" event on the timeline when the form is published
+allow applicant to sign in with school sso (start w ucla) and see all applications open
+clubs can choose to make the timeline public (can deselect which events applicants are able to view, and applicants can only view their title)
+Create a readme for the next agent to take over from you, and add the file to gitignore. 

@@ -7,7 +7,7 @@ import ViewResponses from './pages/ViewResponses';
 import ApplyForm from './pages/ApplyForm';
 import SuccessPage from './pages/SuccessPage';
 import Applicants from './pages/Applicants';
-import BottomNav from './components/BottomNav';
+import TopNav from './components/BottomNav';
 import './App.css';
 
 function App() {
@@ -26,7 +26,7 @@ function App() {
         <Route path="/apply/:formId" element={<ApplyForm />} />
         <Route path="/apply/:formId/success" element={<SuccessPage />} />
       </Routes>
-      <BottomNav />
+      <TopNav />
     </BrowserRouter>
   );
 }
