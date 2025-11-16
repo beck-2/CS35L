@@ -252,7 +252,7 @@ function EditForm() {
 
   if (previewMode) {
     return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', paddingBottom: '70px' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', paddingTop: '80px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1>{form.name}</h1>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -310,7 +310,7 @@ function EditForm() {
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '20px', padding: '20px', paddingBottom: '70px' }}>
+      <div style={{ display: 'flex', gap: '20px', padding: '20px', paddingTop: '80px' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '20px', flexWrap: 'wrap' }}>
             <div>

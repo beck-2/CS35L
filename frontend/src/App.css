@@ -1,5 +1,5 @@
-/* Ensure content isn't hidden behind bottom navigation */
+/* Ensure content isn't hidden behind top navigation */
 body {
-  padding-bottom: 60px;
+  padding-top: 70px;
 }
 

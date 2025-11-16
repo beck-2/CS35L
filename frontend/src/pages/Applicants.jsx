@@ -34,10 +34,10 @@ function Applicants() {
     }
   };
 
-  if (loading) return <div style={{ padding: '20px', paddingBottom: '70px' }}>Loading applicants...</div>;
+  if (loading) return <div style={{ padding: '20px', paddingTop: '80px' }}>Loading applicants...</div>;
 
   return (
-    <div style={{ padding: '20px', paddingBottom: '70px' }}>
+    <div style={{ padding: '20px', paddingTop: '80px' }}>
       <h1>Applicants</h1>
       <p style={{ color: '#666', marginBottom: '20px' }}>
         View all responses across all forms ({allResponses.length} total)
