@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft } from 'lucide-react';
 
 function ViewResponses() {
   const { id } = useParams();
@@ -7,6 +8,7 @@ function ViewResponses() {
   const [form, setForm] = useState(null);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedResponses, setExpandedResponses] = useState({});
 
   useEffect(() => {
     Promise.all([
@@ -24,63 +26,341 @@ function ViewResponses() {
       });
   }, [id]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!form) return <div>Form not found</div>;
+  const toggleResponse = (responseId) => {
+    setExpandedResponses(prev => ({
+      ...prev,
+      [responseId]: !prev[responseId]
+    }));
+  };
+
+  if (loading) return (
+    <div style={{ 
+      padding: '20px', 
+      paddingTop: '90px',
+      backgroundColor: '#F5FCEE',
+      minHeight: '100vh',
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div>Loading responses...</div>
+      </div>
+    </div>
+  );
+  
+  if (!form) return (
+    <div style={{ 
+      padding: '20px', 
+      paddingTop: '90px',
+      backgroundColor: '#F5FCEE',
+      minHeight: '100vh',
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div>Form not found</div>
+      </div>
+    </div>
+  );
 
   return (
-    <div style={{ padding: '20px', paddingTop: '80px' }}>
-      <h1>Responses: {form.name}</h1>
-      <Link to={`/admin/forms/${id}/edit`}>Edit Form</Link>
-      {' | '}
-      <button onClick={() => navigate('/admin')}>Back to Dashboard</button>
-      
-      <h2>Submissions ({responses.length})</h2>
-      {responses.length === 0 ? (
-        <p>No responses yet.</p>
-      ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {responses.map(response => {
-            const data = typeof response.response_data === 'string' 
-              ? JSON.parse(response.response_data) 
-              : response.response_data;
-            
-            return (
-              <li key={response.id} style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px', borderRadius: '5px' }}>
-                <p><strong>Submitted:</strong> {new Date(response.submitted_at).toLocaleString()}</p>
-                {response.applicant_name && <p><strong>Name:</strong> {response.applicant_name}</p>}
-                {response.applicant_email && <p><strong>Email:</strong> {response.applicant_email}</p>}
-                <details style={{ marginTop: '10px' }}>
-                  <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>View Response Data</summary>
-                  <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '3px' }}>
-                    {Object.entries(data).map(([key, value]) => (
-                      <div key={key} style={{ marginBottom: '10px' }}>
-                        <strong>{key}:</strong>
-                        {typeof value === 'string' && value.startsWith('file:') ? (
-                          <div>
-                            <span style={{ color: '#007bff' }}>📎 File uploaded (ID: {value.replace('file:', '')})</span>
-                            <a 
-                              href={`/api/files/${value.replace('file:', '')}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ marginLeft: '10px', color: '#007bff' }}
-                            >
-                              Download
-                            </a>
-                          </div>
-                        ) : Array.isArray(value) ? (
-                          <div>{value.join(', ')}</div>
-                        ) : (
-                          <div>{String(value)}</div>
+    <div style={{ 
+      padding: '20px', 
+      paddingTop: '90px',
+      backgroundColor: '#F5FCEE',
+      minHeight: '100vh',
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Header Section */}
+        <div style={{ marginBottom: '32px' }}>
+          <button
+            onClick={() => navigate('/admin/applicants')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              color: '#4D7298',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              padding: '8px 0',
+              marginBottom: '16px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#77A6B6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#4D7298';
+            }}
+          >
+            <ArrowLeft size={16} />
+            Back to Applicants
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ 
+                color: '#2d3436', 
+                marginBottom: '8px', 
+                fontSize: '32px',
+                fontWeight: '600',
+                letterSpacing: '-0.02em',
+              }}>
+                {form.name}
+              </h1>
+              <p style={{ color: '#636e72', fontSize: '16px', margin: 0 }}>
+                {responses.length} {responses.length === 1 ? 'response' : 'responses'}
+              </p>
+            </div>
+            <Link 
+              to={`/admin/forms/${id}/edit`}
+              style={{ textDecoration: 'none' }}
+            >
+              <button style={{
+                padding: '10px 20px',
+                backgroundColor: '#4D7298',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#77A6B6';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#4D7298';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}>
+                <FileText size={16} />
+                Edit Form
+              </button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Responses List */}
+        {responses.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '60px 20px',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+          }}>
+            <FileText size={48} color="#a3a3a3" style={{ marginBottom: '16px' }} />
+            <p style={{ color: '#737373', fontSize: '18px', marginBottom: '8px' }}>No responses yet</p>
+            <p style={{ color: '#a3a3a3', fontSize: '14px' }}>Share your form to start receiving applications.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {responses.map(response => {
+              const data = typeof response.response_data === 'string' 
+                ? JSON.parse(response.response_data) 
+                : response.response_data;
+              const isExpanded = expandedResponses[response.id];
+              
+              return (
+                <div 
+                  key={response.id} 
+                  style={{ 
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+                    border: '1px solid #f5f5f4',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Response Header - Collapsible */}
+                  <div 
+                    onClick={() => toggleResponse(response.id)}
+                    style={{ 
+                      padding: '20px 24px',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F5FCEE';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      {/* Arrow Icon */}
+                      {isExpanded ? (
+                        <ChevronDown size={20} color="#4D7298" />
+                      ) : (
+                        <ChevronRight size={20} color="#4D7298" />
+                      )}
+                      
+                      {/* Applicant Info */}
+                      <div>
+                        {response.applicant_name && (
+                          <p style={{ 
+                            margin: 0, 
+                            fontWeight: '600',
+                            color: '#0a0a0a',
+                            fontSize: '18px',
+                          }}>
+                            {response.applicant_name}
+                          </p>
+                        )}
+                        {response.applicant_email && (
+                          <p style={{ 
+                            margin: '4px 0 0 0', 
+                            color: '#737373', 
+                            fontSize: '14px' 
+                          }}>
+                            {response.applicant_email}
+                          </p>
                         )}
                       </div>
-                    ))}
+                    </div>
+                    
+                    {/* Submission Date */}
+                    <span style={{ 
+                      fontSize: '13px', 
+                      color: '#a3a3a3',
+                      backgroundColor: '#F5FCEE',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                    }}>
+                      {new Date(response.submitted_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
                   </div>
-                </details>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+
+                  {/* Expanded Response Data */}
+                  {isExpanded && (
+                    <div style={{ 
+                      padding: '0 24px 24px 24px',
+                      borderTop: '1px solid #f5f5f4',
+                    }}>
+                      <div style={{ 
+                        marginTop: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px',
+                      }}>
+                        {Object.entries(data).map(([key, value]) => (
+                          <div 
+                            key={key} 
+                            style={{ 
+                              padding: '16px',
+                              backgroundColor: '#F5FCEE',
+                              borderRadius: '12px',
+                              border: '1px solid #e5e5e5',
+                            }}
+                          >
+                            <p style={{ 
+                              margin: '0 0 8px 0',
+                              fontWeight: '600',
+                              color: '#4D7298',
+                              fontSize: '14px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                            }}>
+                              {key}
+                            </p>
+                            <div style={{ 
+                              color: '#0a0a0a',
+                              fontSize: '15px',
+                              lineHeight: '1.6',
+                            }}>
+                              {typeof value === 'string' && value.startsWith('file:') ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <span style={{ 
+                                    color: '#4D7298',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}>
+                                    <FileText size={16} />
+                                    File uploaded
+                                  </span>
+                                  <a 
+                                    href={`/api/files/${value.replace('file:', '')}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{ 
+                                      color: '#4D7298',
+                                      textDecoration: 'none',
+                                      fontWeight: '500',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '6px 12px',
+                                      backgroundColor: 'white',
+                                      borderRadius: '6px',
+                                      border: '1px solid #9DC3C2',
+                                      fontSize: '13px',
+                                      transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#9DC3C2';
+                                      e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'white';
+                                      e.currentTarget.style.color = '#4D7298';
+                                    }}
+                                  >
+                                    <Download size={14} />
+                                    Download
+                                  </a>
+                                </div>
+                              ) : Array.isArray(value) ? (
+                                <div style={{ 
+                                  display: 'flex', 
+                                  flexWrap: 'wrap', 
+                                  gap: '8px' 
+                                }}>
+                                  {value.map((item, idx) => (
+                                    <span 
+                                      key={idx}
+                                      style={{
+                                        padding: '4px 12px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '20px',
+                                        fontSize: '14px',
+                                        border: '1px solid #9DC3C2',
+                                        color: '#4D7298',
+                                      }}
+                                    >
+                                      {String(item)}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div style={{ whiteSpace: 'pre-wrap' }}>{String(value)}</div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
