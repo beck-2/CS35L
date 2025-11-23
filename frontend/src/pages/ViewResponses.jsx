@@ -283,7 +283,7 @@ function ViewResponses() {
                               lineHeight: '1.6',
                             }}>
                               {typeof value === 'string' && value.startsWith('file:') ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                   <span style={{ 
                                     color: '#4D7298',
                                     display: 'flex',
@@ -313,6 +313,36 @@ function ViewResponses() {
                                     }}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.backgroundColor = '#9DC3C2';
+                                      e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'white';
+                                      e.currentTarget.style.color = '#4D7298';
+                                    }}
+                                  >
+                                    <FileText size={14} />
+                                    View
+                                  </a>
+                                  <a 
+                                    href={`/api/files/${value.replace('file:', '')}/download`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{ 
+                                      color: '#4D7298',
+                                      textDecoration: 'none',
+                                      fontWeight: '500',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '6px 12px',
+                                      backgroundColor: 'white',
+                                      borderRadius: '6px',
+                                      border: '1px solid #77A6B6',
+                                      fontSize: '13px',
+                                      transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#77A6B6';
                                       e.currentTarget.style.color = 'white';
                                     }}
                                     onMouseLeave={(e) => {
