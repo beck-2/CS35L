@@ -56,7 +56,68 @@ app.get('/api/files/:id', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'File not found' });
     }
-    res.json(result.rows[0]);
+    
+    const file = result.rows[0];
+    const base64Content = file.content;
+    const buffer = Buffer.from(base64Content, 'base64');
+    
+    // Determine content type from filename
+    const ext = file.filename.split('.').pop().toLowerCase();
+    const contentTypeMap = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'txt': 'text/plain',
+    };
+    const contentType = contentTypeMap[ext] || 'application/octet-stream';
+    
+    // Set headers for inline viewing (not forcing download)
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    
+    res.send(buffer);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/files/:id/download', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT id, filename, content, created_at FROM files WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    const file = result.rows[0];
+    const base64Content = file.content;
+    const buffer = Buffer.from(base64Content, 'base64');
+    
+    // Determine content type from filename
+    const ext = file.filename.split('.').pop().toLowerCase();
+    const contentTypeMap = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'txt': 'text/plain',
+    };
+    const contentType = contentTypeMap[ext] || 'application/octet-stream';
+    
+    // Force download
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    
+    res.send(buffer);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
