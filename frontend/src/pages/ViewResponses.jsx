@@ -181,9 +181,6 @@ function ViewResponses() {
                     onClick={() => toggleResponse(response.id)}
                     style={{ 
                       padding: '20px 24px',
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
                       cursor: 'pointer',
                       transition: 'background-color 0.2s ease',
                     }}
@@ -194,55 +191,103 @@ function ViewResponses() {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                      {/* Arrow Icon */}
-                      {isExpanded ? (
-                        <ChevronDown size={20} color="#4D7298" />
-                      ) : (
-                        <ChevronRight size={20} color="#4D7298" />
-                      )}
-                      
-                      {/* Applicant Info */}
-                      <div>
-                        {response.applicant_name && (
-                          <p style={{ 
-                            margin: 0, 
-                            fontWeight: '600',
-                            color: '#0a0a0a',
-                            fontSize: '18px',
-                          }}>
-                            {response.applicant_name}
-                          </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isExpanded ? 0 : '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                        {/* Arrow Icon */}
+                        {isExpanded ? (
+                          <ChevronDown size={20} color="#4D7298" />
+                        ) : (
+                          <ChevronRight size={20} color="#4D7298" />
                         )}
-                        {response.applicant_email && (
-                          <p style={{ 
-                            margin: '4px 0 0 0', 
-                            color: '#737373', 
-                            fontSize: '14px' 
-                          }}>
-                            {response.applicant_email}
-                          </p>
-                        )}
+                        
+                        {/* Applicant Info */}
+                        <div>
+                          {response.applicant_name && (
+                            <p style={{ 
+                              margin: 0, 
+                              fontWeight: '600',
+                              color: '#0a0a0a',
+                              fontSize: '18px',
+                            }}>
+                              {response.applicant_name}
+                            </p>
+                          )}
+                          {response.applicant_email && (
+                            <p style={{ 
+                              margin: '4px 0 0 0', 
+                              color: '#737373', 
+                              fontSize: '14px' 
+                            }}>
+                              {response.applicant_email}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* Submission Date */}
+                      <span style={{ 
+                        fontSize: '13px', 
+                        color: '#a3a3a3',
+                        backgroundColor: '#F5FCEE',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontWeight: '500',
+                      }}>
+                        {new Date(response.submitted_at).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
                     </div>
-                    
-                    {/* Submission Date */}
-                    <span style={{ 
-                      fontSize: '13px', 
-                      color: '#a3a3a3',
-                      backgroundColor: '#F5FCEE',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontWeight: '500',
-                    }}>
-                      {new Date(response.submitted_at).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
+
+                    {/* Preview of first 2 questions when collapsed */}
+                    {!isExpanded && Object.entries(data).length > 0 && (
+                      <div style={{ 
+                        marginTop: '12px',
+                        marginLeft: '32px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #e5e5e5',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                      }}>
+                        {Object.entries(data).slice(0, 2).map(([question, answer], idx) => {
+                          // Skip file uploads in preview
+                          if (typeof answer === 'string' && answer.startsWith('file:')) {
+                            return null;
+                          }
+                          
+                          return (
+                            <div key={idx} style={{ fontSize: '13px' }}>
+                              <span style={{ 
+                                color: '#737373',
+                                fontWeight: '500',
+                              }}>
+                                {question}:{' '}
+                              </span>
+                              <span style={{ color: '#0a0a0a' }}>
+                                {Array.isArray(answer) 
+                                  ? answer.join(', ')
+                                  : String(answer).length > 80 
+                                    ? String(answer).substring(0, 80) + '...' 
+                                    : String(answer)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#4D7298',
+                          marginTop: '4px',
+                          fontWeight: '500',
+                        }}>
+                          Click to view full response
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Expanded Response Data */}
