@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft } from 'lucide-react';
+import RatingForm from '../components/RatingForm';
+import RatingsList from '../components/RatingsList';
 
+/**
+ * ViewResponses - Displays all form responses with ratings capability
+ * Separates concerns: UI display vs rating logic (handled by child components)
+ */
 function ViewResponses() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -9,10 +15,10 @@ function ViewResponses() {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedResponses, setExpandedResponses] = useState({});
+  // Rating state keyed by response ID for efficient lookups
   const [ratings, setRatings] = useState({});
   const [averages, setAverages] = useState({});
-  const [newRating, setNewRating] = useState({});
-  const [hoveredStar, setHoveredStar] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState({});
 
   useEffect(() => {
     Promise.all([
@@ -45,6 +51,7 @@ function ViewResponses() {
 
   const fetchRatings = async (responseId) => {
     try {
+      // fetch both ratings and average in parallel for better performance
       const [ratingsRes, avgRes] = await Promise.all([
         fetch(`/api/responses/${responseId}/ratings`),
         fetch(`/api/responses/${responseId}/ratings/average`)
@@ -59,34 +66,30 @@ function ViewResponses() {
     }
   };
 
-  const submitRating = async (responseId) => {
-    const rating = newRating[responseId];
-    if (!rating?.reviewer_name || !rating?.rating) {
-      alert('Please enter your name and select a rating');
-      return;
-    }
+  const submitRating = async (responseId, ratingData) => {
+    setIsSubmitting(prev => ({ ...prev, [responseId]: true }));
 
     try {
-      await fetch(`/api/responses/${responseId}/ratings`, {
+      const response = await fetch(`/api/responses/${responseId}/ratings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rating)
+        body: JSON.stringify(ratingData)
       });
 
-      // Clear form and refresh ratings
-      setNewRating(prev => ({ ...prev, [responseId]: {} }));
-      fetchRatings(responseId);
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      // refresh ratings after successful submit
+      await fetchRatings(responseId);
+      console.log('Rating submitted successfully');
+      return true;
     } catch (error) {
       console.error('Error submitting rating:', error);
-      alert('Error submitting rating');
+      return false;
+    } finally {
+      setIsSubmitting(prev => ({ ...prev, [responseId]: false }));
     }
-  };
-
-  const updateNewRating = (responseId, field, value) => {
-    setNewRating(prev => ({
-      ...prev,
-      [responseId]: { ...prev[responseId], [field]: value }
-    }));
   };
 
   if (loading) return (
@@ -491,261 +494,15 @@ function ViewResponses() {
                         paddingTop: '24px',
                         borderTop: '2px solid #e5e5e5',
                       }}>
-                        {/* Average Rating Display */}
-                        {averages[response.id] && averages[response.id].count > 0 && (
-                          <div style={{
-                            marginBottom: '24px',
-                            padding: '16px',
-                            backgroundColor: '#F5FCEE',
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                          }}>
-                            <span style={{
-                              fontSize: '32px',
-                              fontWeight: '700',
-                              color: '#4D7298',
-                            }}>
-                              {averages[response.id].average}
-                            </span>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: '14px', color: '#737373', marginBottom: '4px' }}>
-                                Average Rating
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#a3a3a3' }}>
-                                {averages[response.id].count} {averages[response.id].count === 1 ? 'review' : 'reviews'}
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        <RatingsList
+                          ratings={ratings[response.id]}
+                          average={averages[response.id]}
+                        />
 
-                        {/* Add New Rating Form */}
-                        <div style={{
-                          padding: '20px',
-                          backgroundColor: 'white',
-                          borderRadius: '12px',
-                          border: '1px solid #e5e5e5',
-                          marginBottom: '24px',
-                        }}>
-                          <h3 style={{
-                            margin: '0 0 16px 0',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            color: '#0a0a0a',
-                          }}>
-                            Add Your Rating
-                          </h3>
-
-                          {/* Reviewer Name */}
-                          <div style={{ marginBottom: '16px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              color: '#737373',
-                              marginBottom: '6px',
-                            }}>
-                              Your Name *
-                            </label>
-                            <input
-                              type="text"
-                              value={newRating[response.id]?.reviewer_name || ''}
-                              onChange={(e) => updateNewRating(response.id, 'reviewer_name', e.target.value)}
-                              placeholder="Enter your name"
-                              style={{
-                                width: '100%',
-                                padding: '10px 12px',
-                                fontSize: '14px',
-                                border: '1px solid #e5e5e5',
-                                borderRadius: '8px',
-                                boxSizing: 'border-box',
-                              }}
-                            />
-                          </div>
-
-                          {/* Star Rating */}
-                          <div style={{ marginBottom: '16px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              color: '#737373',
-                              marginBottom: '6px',
-                            }}>
-                              Rating *
-                            </label>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              {[1, 2, 3, 4, 5].map(star => {
-                                const currentRating = newRating[response.id]?.rating || 0;
-                                const hovered = hoveredStar[response.id] || 0;
-                                const filled = star <= (hovered || currentRating);
-
-                                return (
-                                  <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => updateNewRating(response.id, 'rating', star)}
-                                    onMouseEnter={() => setHoveredStar(prev => ({ ...prev, [response.id]: star }))}
-                                    onMouseLeave={() => setHoveredStar(prev => ({ ...prev, [response.id]: 0 }))}
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      fontSize: '32px',
-                                      padding: '4px',
-                                      transition: 'transform 0.2s',
-                                    }}
-                                    onMouseDown={(e) => {
-                                      e.currentTarget.style.transform = 'scale(0.9)';
-                                    }}
-                                    onMouseUp={(e) => {
-                                      e.currentTarget.style.transform = 'scale(1)';
-                                    }}
-                                  >
-                                    {filled ? '⭐' : '☆'}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Comment */}
-                          <div style={{ marginBottom: '16px' }}>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              color: '#737373',
-                              marginBottom: '6px',
-                            }}>
-                              Comment (optional)
-                            </label>
-                            <textarea
-                              value={newRating[response.id]?.comment || ''}
-                              onChange={(e) => updateNewRating(response.id, 'comment', e.target.value)}
-                              placeholder="Add your feedback..."
-                              rows={3}
-                              style={{
-                                width: '100%',
-                                padding: '10px 12px',
-                                fontSize: '14px',
-                                border: '1px solid #e5e5e5',
-                                borderRadius: '8px',
-                                resize: 'vertical',
-                                fontFamily: 'inherit',
-                                boxSizing: 'border-box',
-                              }}
-                            />
-                          </div>
-
-                          {/* Submit Button */}
-                          <button
-                            onClick={() => submitRating(response.id)}
-                            style={{
-                              padding: '10px 20px',
-                              backgroundColor: '#4D7298',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontWeight: '500',
-                              fontSize: '14px',
-                              transition: 'all 0.2s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#77A6B6';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#4D7298';
-                            }}
-                          >
-                            Submit Rating
-                          </button>
-                        </div>
-
-                        {/* Existing Ratings List */}
-                        {ratings[response.id] && ratings[response.id].length > 0 && (
-                          <div>
-                            <h3 style={{
-                              margin: '0 0 16px 0',
-                              fontSize: '16px',
-                              fontWeight: '600',
-                              color: '#0a0a0a',
-                            }}>
-                              Reviews ({ratings[response.id].length})
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              {ratings[response.id].map(rating => (
-                                <div
-                                  key={rating.id}
-                                  style={{
-                                    padding: '16px',
-                                    backgroundColor: 'white',
-                                    borderRadius: '12px',
-                                    border: '1px solid #e5e5e5',
-                                  }}
-                                >
-                                  <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'start',
-                                    marginBottom: '8px',
-                                  }}>
-                                    <div>
-                                      <div style={{
-                                        fontWeight: '600',
-                                        color: '#0a0a0a',
-                                        fontSize: '14px',
-                                      }}>
-                                        {rating.reviewer_name}
-                                      </div>
-                                      {rating.reviewer_email && (
-                                        <div style={{
-                                          fontSize: '12px',
-                                          color: '#a3a3a3',
-                                          marginTop: '2px',
-                                        }}>
-                                          {rating.reviewer_email}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '2px' }}>
-                                      {[...Array(5)].map((_, i) => (
-                                        <span key={i} style={{ fontSize: '16px' }}>
-                                          {i < rating.rating ? '⭐' : '☆'}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  {rating.comment && (
-                                    <div style={{
-                                      fontSize: '14px',
-                                      color: '#0a0a0a',
-                                      lineHeight: '1.5',
-                                      marginTop: '8px',
-                                    }}>
-                                      {rating.comment}
-                                    </div>
-                                  )}
-                                  <div style={{
-                                    fontSize: '11px',
-                                    color: '#a3a3a3',
-                                    marginTop: '8px',
-                                  }}>
-                                    {new Date(rating.created_at).toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <RatingForm
+                          onSubmit={(ratingData) => submitRating(response.id, ratingData)}
+                          isSubmitting={isSubmitting[response.id]}
+                        />
                       </div>
                     </div>
                   )}
