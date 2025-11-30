@@ -319,6 +319,68 @@ app.post('/api/forms/public/:publicId/submit', async (req, res) => {
   }
 });
 
+// Rating endpoints
+app.post('/api/responses/:id/ratings', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reviewer_name, reviewer_email, rating, comment } = req.body;
+
+    if (!reviewer_name || !rating) {
+      return res.status(400).json({ error: 'reviewer_name and rating are required' });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'rating must be between 1 and 5' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ratings (response_id, reviewer_name, reviewer_email, rating, comment)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [id, reviewer_name, reviewer_email || null, rating, comment || null]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/responses/:id/ratings', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT * FROM ratings
+       WHERE response_id = $1
+       ORDER BY created_at DESC`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/responses/:id/ratings/average', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT
+        COALESCE(AVG(rating), 0) as average,
+        COUNT(*) as count
+       FROM ratings
+       WHERE response_id = $1`,
+      [id]
+    );
+    res.json({
+      average: parseFloat(result.rows[0].average).toFixed(1),
+      count: parseInt(result.rows[0].count)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/events', async (req, res) => {
   try {
     const result = await pool.query(
