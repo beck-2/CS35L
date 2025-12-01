@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './db/connection.js';
+import { generateResponsesCSV, generateExportFilename } from './services/exportService.js';
 
 dotenv.config();
 
@@ -377,6 +378,64 @@ app.get('/api/responses/:id/ratings/average', async (req, res) => {
       count: parseInt(result.rows[0].count)
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/forms/:id/responses/export', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const formResult = await pool.query(
+      'SELECT id, name, definition FROM forms WHERE id = $1',
+      [id]
+    );
+
+    if (formResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Form not found' });
+    }
+
+    const form = formResult.rows[0];
+
+    const responsesResult = await pool.query(
+      `SELECT id, form_id, response_data, submitted_at, applicant_name, applicant_email
+       FROM form_responses
+       WHERE form_id = $1
+       ORDER BY submitted_at DESC`,
+      [id]
+    );
+
+    const ratingsResult = await pool.query(
+      `SELECT
+         response_id,
+         AVG(rating) as avg_rating,
+         COUNT(*) as review_count
+       FROM ratings
+       WHERE response_id IN (
+         SELECT id FROM form_responses WHERE form_id = $1
+       )
+       GROUP BY response_id`,
+      [id]
+    );
+
+    const ratingsMap = {};
+    ratingsResult.rows.forEach(row => {
+      ratingsMap[row.response_id] = {
+        avg_rating: parseFloat(row.avg_rating),
+        review_count: parseInt(row.review_count)
+      };
+    });
+
+    const csvContent = generateResponsesCSV(form, responsesResult.rows, ratingsMap);
+    const filename = generateExportFilename(form.name);
+    const csvWithBOM = '\uFEFF' + csvContent;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csvWithBOM);
+
+  } catch (error) {
+    console.error('Export error:', error);
     res.status(500).json({ error: error.message });
   }
 });

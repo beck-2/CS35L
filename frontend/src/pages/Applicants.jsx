@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download } from 'lucide-react';
 
 function Applicants() {
   const [forms, setForms] = useState([]);
@@ -41,6 +41,46 @@ function Applicants() {
       ...prev,
       [formId]: !prev[formId]
     }));
+  };
+
+  const handleExportCSV = async (formId, event) => {
+    event.stopPropagation();
+
+    try {
+      const response = await fetch(`/api/forms/${formId}/responses/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Extract filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'responses-export.csv';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
   };
 
   if (loading) return (
@@ -186,16 +226,18 @@ function Applicants() {
                         </div>
                       ) : (
                         <>
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: '12px', 
+                          <div style={{
+                            display: 'flex',
+                            gap: '12px',
                             marginTop: '20px',
                             marginBottom: '16px',
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
                           }}>
-                            <Link 
+                            <Link
                               to={`/admin/forms/${form.id}/responses`}
-                              style={{ 
-                                color: '#4D7298', 
+                              style={{
+                                color: '#4D7298',
                                 textDecoration: 'none',
                                 fontSize: '14px',
                                 fontWeight: '500',
@@ -210,10 +252,36 @@ function Applicants() {
                             >
                               View all responses →
                             </Link>
-                            <Link 
+                            <button
+                              onClick={(e) => handleExportCSV(form.id, e)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                color: '#28a745',
+                                textDecoration: 'none',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '0',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#218838';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '#28a745';
+                              }}
+                            >
+                              <Download size={14} />
+                              Export CSV
+                            </button>
+                            <Link
                               to={`/admin/forms/${form.id}/edit`}
-                              style={{ 
-                                color: '#737373', 
+                              style={{
+                                color: '#737373',
                                 textDecoration: 'none',
                                 fontSize: '14px',
                                 fontWeight: '500',
