@@ -92,6 +92,44 @@ function ViewResponses() {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch(`/api/forms/${id}/responses/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'responses-export.csv';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
+  };
+
   if (loading) return (
     <div style={{ 
       padding: '20px', 
@@ -157,9 +195,9 @@ function ViewResponses() {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h1 style={{ 
-                color: '#2d3436', 
-                marginBottom: '8px', 
+              <h1 style={{
+                color: '#2d3436',
+                marginBottom: '8px',
                 fontSize: '32px',
                 fontWeight: '600',
                 letterSpacing: '-0.02em',
@@ -170,36 +208,71 @@ function ViewResponses() {
                 {responses.length} {responses.length === 1 ? 'response' : 'responses'}
               </p>
             </div>
-            <Link 
-              to={`/admin/forms/${id}/edit`}
-              style={{ textDecoration: 'none' }}
-            >
-              <button style={{
-                padding: '10px 20px',
-                backgroundColor: '#4D7298',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#77A6B6';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#4D7298';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}>
-                <FileText size={16} />
-                Edit Form
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={handleExportCSV}
+                disabled={responses.length === 0}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: responses.length === 0 ? '#cccccc' : '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: responses.length === 0 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  opacity: responses.length === 0 ? 0.6 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (responses.length > 0) {
+                    e.currentTarget.style.backgroundColor = '#218838';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (responses.length > 0) {
+                    e.currentTarget.style.backgroundColor = '#28a745';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}>
+                <Download size={16} />
+                Export CSV
               </button>
-            </Link>
+              <Link
+                to={`/admin/forms/${id}/edit`}
+                style={{ textDecoration: 'none' }}
+              >
+                <button style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#4D7298',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#77A6B6';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4D7298';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}>
+                  <FileText size={16} />
+                  Edit Form
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
 
