@@ -7,7 +7,7 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
-    "test:cucumber": "cucumber-js"
+    "test:cucumber": "cucumber-js tests/cucumber/features/ --require tests/cucumber/step-definitions/"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
