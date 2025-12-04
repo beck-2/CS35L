@@ -8,6 +8,7 @@ function ApplyForm() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [fileData, setFileData] = useState({});
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     fetch(`/api/forms/public/${formId}`)
@@ -37,12 +38,93 @@ function ApplyForm() {
     });
   };
 
+  const validateField = (field, value) => {
+    const fieldName = field.id;
+    
+    if (field.type === 'email') {
+      const emailRegex = new RegExp(field.validation || '^(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$');
+      if (!emailRegex.test(value)) {
+        setValidationErrors(prev => ({ ...prev, [fieldName]: 'Error: Please enter a valid email' }));
+        return false;
+      } else {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+        return true;
+      }
+    }
+    
+    if (field.type === 'gpa') {
+      const gpaRegex = new RegExp(field.validation || '^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$');
+      if (!gpaRegex.test(value)) {
+        setValidationErrors(prev => ({ ...prev, [fieldName]: 'Error: Please enter a valid GPA' }));
+        return false;
+      } else {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+        return true;
+      }
+    }
+    
+    if (field.type === 'graduation_year') {
+      const currentYear = new Date().getFullYear();
+      const minYear = currentYear;
+      const maxYear = currentYear + 4;
+      const yearValue = parseInt(value, 10);
+      
+      if (isNaN(yearValue) || yearValue < minYear || yearValue > maxYear) {
+        setValidationErrors(prev => ({ ...prev, [fieldName]: `Error: Please enter a valid graduation year (${minYear}-${maxYear})` }));
+        return false;
+      } else {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+        return true;
+      }
+    }
+    
+    return true;
+  };
+
+  const handleFieldBlur = (field, e) => {
+    const value = e.target.value;
+    if (value) {
+      validateField(field, value);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
-
+    
     const formData = new FormData(e.target);
     const responseData = {};
+    let hasValidationErrors = false;
+
+    const fields = form.definition?.fields || [];
+    for (const field of fields) {
+      const fieldName = field.id || `field_${fields.indexOf(field)}`;
+      const value = formData.get(fieldName);
+      
+      if (value && (field.type === 'email' || field.type === 'gpa' || field.type === 'graduation_year')) {
+        const isValid = validateField(field, value);
+        if (!isValid) {
+          hasValidationErrors = true;
+        }
+      }
+    }
+
+    if (hasValidationErrors) {
+      return;
+    }
+
+    setSubmitting(true);
 
     for (const [key, value] of formData.entries()) {
       if (key.startsWith('file_')) {
@@ -223,6 +305,104 @@ function ApplyForm() {
             {fileData[fieldName] && (
               <p style={{ color: 'green', fontSize: '14px', marginTop: '5px' }}>
                 ✓ File selected
+              </p>
+            )}
+          </div>
+        );
+
+      case 'email':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="email"
+              name={fieldName}
+              required={field.required}
+              onBlur={(e) => handleFieldBlur(field, e)}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                marginTop: '5px',
+                borderColor: validationErrors[fieldName] ? 'red' : undefined
+              }}
+              placeholder="Please enter your email"
+            />
+            {validationErrors[fieldName] && (
+              <p style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+                {validationErrors[fieldName]}
+              </p>
+            )}
+          </div>
+        );
+
+      case 'gpa':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="text"
+              name={fieldName}
+              required={field.required}
+              onBlur={(e) => handleFieldBlur(field, e)}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                marginTop: '5px',
+                borderColor: validationErrors[fieldName] ? 'red' : undefined
+              }}
+              placeholder="Please enter your GPA"
+            />
+            {validationErrors[fieldName] && (
+              <p style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+                {validationErrors[fieldName]}
+              </p>
+            )}
+          </div>
+        );
+
+      case 'graduation_year':
+        const currentYear = new Date().getFullYear();
+        const minYear = currentYear;
+        const maxYear = currentYear + 4;
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="number"
+              name={fieldName}
+              required={field.required}
+              min={minYear}
+              max={maxYear}
+              onBlur={(e) => handleFieldBlur(field, e)}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                marginTop: '5px',
+                borderColor: validationErrors[fieldName] ? 'red' : undefined
+              }}
+              placeholder="Please enter your graduation year"
+            />
+            {validationErrors[fieldName] && (
+              <p style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+                {validationErrors[fieldName]}
               </p>
             )}
           </div>

@@ -37,7 +37,9 @@ function EditForm() {
       description: `Question ${questionNumber}`,
       required: false,
       ...(type === 'radio' || type === 'checkbox' ? { options: ['Option 1'] } : {}),
-      ...(type === 'file' ? { accept: '.pdf,.doc,.docx' } : {})
+      ...(type === 'file' ? { accept: '.pdf,.doc,.docx' } : {}),
+      ...(type === 'email' ? { validation: '^(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$' } : {}),
+      ...(type === 'gpa' ? { validation: '^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$' } : {})
     };
     setFields([...fields, newField]);
     setSelectedField(newField.id);
@@ -351,6 +353,117 @@ function EditForm() {
           </div>
         );
 
+      case 'email':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '24px' }}>
+            {description && (
+              <div style={{ marginBottom: '8px', color: '#737373', fontSize: '14px', fontWeight: '500' }}>
+                {description}
+              </div>
+            )}
+            <label style={{ 
+              display: 'block',
+              color: '#0a0a0a',
+              fontSize: '16px',
+              fontWeight: '500',
+              marginBottom: '8px',
+            }}>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: '#dc3545', marginLeft: '4px' }}> *</span>}
+            </label>
+            <input
+              type="email"
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginTop: '4px', 
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#737373',
+                boxSizing: 'border-box',
+              }}
+              placeholder="Please enter your email"
+            />
+          </div>
+        );
+
+      case 'gpa':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '24px' }}>
+            {description && (
+              <div style={{ marginBottom: '8px', color: '#737373', fontSize: '14px', fontWeight: '500' }}>
+                {description}
+              </div>
+            )}
+            <label style={{ 
+              display: 'block',
+              color: '#0a0a0a',
+              fontSize: '16px',
+              fontWeight: '500',
+              marginBottom: '8px',
+            }}>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: '#dc3545', marginLeft: '4px' }}> *</span>}
+            </label>
+            <input
+              type="text"
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginTop: '4px', 
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#737373',
+                boxSizing: 'border-box',
+              }}
+              placeholder="Please enter your GPA"
+            />
+          </div>
+        );
+
+      case 'graduation_year':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '24px' }}>
+            {description && (
+              <div style={{ marginBottom: '8px', color: '#737373', fontSize: '14px', fontWeight: '500' }}>
+                {description}
+              </div>
+            )}
+            <label style={{ 
+              display: 'block',
+              color: '#0a0a0a',
+              fontSize: '16px',
+              fontWeight: '500',
+              marginBottom: '8px',
+            }}>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: '#dc3545', marginLeft: '4px' }}> *</span>}
+            </label>
+            <input
+              type="number"
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginTop: '4px', 
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#737373',
+                boxSizing: 'border-box',
+              }}
+              placeholder="Please enter your graduation year"
+            />
+          </div>
+        );
+
       default:
         return null;
     }
@@ -660,6 +773,9 @@ function EditForm() {
                     { type: 'radio', label: 'Multiple Choice' },
                     { type: 'checkbox', label: 'Checkboxes' },
                     { type: 'file', label: 'File Upload' },
+                    { type: 'email', label: 'Email' },
+                    { type: 'gpa', label: 'GPA' },
+                    { type: 'graduation_year', label: 'Graduation Year' },
                   ].map(({ type, label }) => (
                     <button 
                       key={type}
