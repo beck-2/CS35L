@@ -44,7 +44,7 @@ const colorStyles = {
   },
 };
 
-function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onEventClick, selectedEventId, onEventSelect }) {
+function SortableEvent({ event, onDelete, onEdit, index, total, onEventClick, selectedEventId, onEventSelect }) {
   const {
     attributes,
     listeners,
@@ -69,33 +69,15 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const hasForm = event.form_id !== null;
   const isApplication = event.name === 'Application';
 
   const handleCardClick = (e) => {
-    if (isApplication) {
-      // Application events still navigate to form
-      handleClick(e);
-    } else {
-      // Other events toggle expansion and select this event
-      setIsExpanded(!isExpanded);
-      if (onEventSelect) {
-        // If clicking the same event, deselect; otherwise select the new one
-        onEventSelect(isSelected ? null : event.id);
-      }
-      if (onEventClick) {
-        onEventClick(event);
-      }
+    setIsExpanded(!isExpanded);
+    if (onEventSelect) {
+      onEventSelect(isSelected ? null : event.id);
     }
-  };
-
-  const handleClick = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (isApplication && hasForm) {
-      onFormClick(event.form_id);
-    } else if (isApplication && !hasForm) {
-      onFormClick(null, event.id);
+    if (onEventClick) {
+      onEventClick(event);
     }
   };
 
@@ -182,9 +164,10 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
             transition: 'all 0.3s ease',
             transform: isDragging ? 'none' : 'translateY(0)',
             position: 'relative',
-            ...(isApplication ? {} : { ...attributes, ...listeners }),
+            ...attributes,
+            ...listeners,
           }}
-          title={isApplication ? 'Click to edit form' : 'Click to view details'}
+          title="Click to view details"
           onClick={handleCardClick}
           onMouseEnter={(e) => {
             if (!isDragging) {
@@ -305,18 +288,6 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
                   title={event.notes}
                 >
                   {isExpanded ? event.notes : truncateText(event.notes)}
-                </div>
-              )}
-              {isApplication && hasForm && (
-                <div
-                  style={{
-                    fontSize: '12px',
-                    color: '#4D7298',
-                    fontWeight: '500',
-                    marginTop: '4px',
-                  }}
-                >
-                  Click to view form
                 </div>
               )}
             </div>
@@ -644,30 +615,6 @@ function Timeline() {
     }
   };
 
-  const handleFormClick = async (formId, eventId) => {
-    if (formId) {
-      navigate(`/admin/forms/${formId}/edit`);
-    } else {
-      try {
-        const response = await fetch(`/api/events/${eventId}/form`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: 'Application Form',
-            definition: { fields: [] },
-          }),
-        });
-
-        if (!response.ok) throw new Error('Failed to create form');
-
-        const form = await response.json();
-        navigate(`/admin/forms/${form.id}/edit`);
-      } catch (error) {
-        console.error('Error creating form:', error);
-        alert('Error creating form');
-      }
-    }
-  };
 
   if (loading) {
     return (
@@ -888,7 +835,6 @@ function Timeline() {
                             setShowAddModal(true);
                             setSelectedEventId(null); // Deselect when editing
                           }}
-                          onFormClick={handleFormClick}
                           selectedEventId={selectedEventId}
                           onEventSelect={setSelectedEventId}
                         />
