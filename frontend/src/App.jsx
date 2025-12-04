@@ -1,4 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Timeline from './pages/Timeline';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateForm from './pages/CreateForm';
@@ -13,20 +17,25 @@ import './App.css';
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/admin" replace />} />
-        
-        <Route path="/admin" element={<Timeline />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/forms/new" element={<CreateForm />} />
-        <Route path="/admin/forms/:id/edit" element={<EditForm />} />
-        <Route path="/admin/forms/:id/responses" element={<ViewResponses />} />
-        <Route path="/admin/applicants" element={<Applicants />} />
-        
-        <Route path="/apply/:formId" element={<ApplyForm />} />
-        <Route path="/apply/:formId/success" element={<SuccessPage />} />
-      </Routes>
-      <TopNav />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/" element={<Navigate to="/admin" replace />} />
+          
+          <Route path="/admin" element={<ProtectedRoute><Timeline /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/forms/new" element={<ProtectedRoute><CreateForm /></ProtectedRoute>} />
+          <Route path="/admin/forms/:id/edit" element={<ProtectedRoute><EditForm /></ProtectedRoute>} />
+          <Route path="/admin/forms/:id/responses" element={<ProtectedRoute><ViewResponses /></ProtectedRoute>} />
+          <Route path="/admin/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>} />
+          
+          <Route path="/apply/:formId" element={<ApplyForm />} />
+          <Route path="/apply/:formId/success" element={<SuccessPage />} />
+        </Routes>
+        <TopNav />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

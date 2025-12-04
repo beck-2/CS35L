@@ -1,14 +1,23 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FileText, Calendar, User } from 'lucide-react';
+import { FileText, Calendar, User, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 function TopNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
 
-  // Don't show on public application routes
-  if (location.pathname.startsWith('/apply/')) {
+  // Don't show on public application routes or auth pages
+  if (location.pathname.startsWith('/apply/') || 
+      location.pathname === '/login' || 
+      location.pathname === '/register') {
     return null;
   }
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   const isActive = (path) => {
     if (path === '/admin') {
@@ -97,6 +106,26 @@ function TopNav() {
       >
         <User size={20} strokeWidth={isActive('/admin/applicants') ? 2.5 : 2} />
         <span style={{ fontSize: '11px', lineHeight: '1' }}>Applicants</span>
+      </button>
+      <button
+        onClick={handleLogout}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '4px',
+          border: 'none',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          color: '#666',
+          fontWeight: '400',
+        }}
+        title={`Logged in as ${user?.username || 'User'}`}
+      >
+        <LogOut size={20} strokeWidth={2} />
+        <span style={{ fontSize: '11px', lineHeight: '1' }}>Logout</span>
       </button>
     </div>
   );
