@@ -40,7 +40,7 @@ function EditForm() {
       ...(type === 'radio' || type === 'checkbox' ? { options: ['Option 1'] } : {}),
       ...(type === 'file' ? { accept: '.pdf,.doc,.docx' } : {}),
       ...(type === 'email' ? { validation: '^(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$' } : {}),
-      ...(type === 'gpa' ? { validation: '^(?:[0-3]\\.\\d+|4\\.00)$' } : {})
+      ...(type === 'gpa' ? { validation: '^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$' } : {})
     };
     setFields([...fields, newField]);
     setSelectedField(newField.id);

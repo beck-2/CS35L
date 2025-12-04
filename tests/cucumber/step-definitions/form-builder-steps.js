@@ -112,7 +112,7 @@ Given('I have a form with a GPA field', async function () {
             type: 'gpa',
             label: 'GPA',
             required: true,
-            validation: '^(?:[0-3]\\.\\d+|4\\.00)$'
+            validation: '^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$'
           }
         ]
       }
@@ -180,7 +180,7 @@ Given('I have a form with email, GPA, and graduation year fields', async functio
             type: 'gpa',
             label: 'GPA',
             required: true,
-            validation: '^(?:[0-3]\\.\\d+|4\\.00)$'
+            validation: '^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$'
           },
           {
             id: 'grad_year_field',

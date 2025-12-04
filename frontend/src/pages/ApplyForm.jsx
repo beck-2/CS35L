@@ -57,7 +57,7 @@ function ApplyForm() {
     }
     
     if (field.type === 'gpa') {
-      const gpaRegex = new RegExp(field.validation || '^(?:[0-3]\\.\\d+|4\\.00)$');
+      const gpaRegex = new RegExp(field.validation || '^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$');
       if (!gpaRegex.test(value)) {
         setValidationErrors(prev => ({ ...prev, [fieldName]: 'Error: Please enter a valid GPA' }));
         return false;
