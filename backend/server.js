@@ -445,17 +445,16 @@ app.get('/api/responses/:id/ratings/average', async (req, res) => {
   }
 });
 
-// Update applicant status (accept/reject/pending)
+// Update applicant status (accept/reject/pending/timeline stages)
 app.patch('/api/responses/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
     const userId = req.session?.userId;
 
-    // Valid statuses for now: pending, accepted, rejected
-    const validStatuses = ['pending', 'accepted', 'rejected'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+    // Validate that status is provided and not empty
+    if (!status || typeof status !== 'string' || status.trim() === '') {
+      return res.status(400).json({ error: 'Status is required' });
     }
 
     // Get current status
