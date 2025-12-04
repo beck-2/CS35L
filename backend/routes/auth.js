@@ -14,18 +14,42 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username, email, and password are required' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    // Validate username (3-20 characters, alphanumeric and underscores only)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({ error: 'Username must be 3-20 characters and contain only letters, numbers, and underscores' });
     }
 
-    // Check if user already exists
-    const existingUser = await pool.query(
-      'SELECT * FROM users WHERE username = $1 OR email = $2',
-      [username, email]
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address' });
+    }
+
+    // Validate password (minimum 8 characters, at least one letter and one number)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters and contain at least one letter and one number' });
+    }
+
+    // Check if username already exists
+    const existingUsername = await pool.query(
+      'SELECT * FROM users WHERE username = $1',
+      [username]
     );
 
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Username or email already exists' });
+    if (existingUsername.rows.length > 0) {
+      return res.status(400).json({ error: 'Username is already taken' });
+    }
+
+    // Check if email already exists
+    const existingEmail = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingEmail.rows.length > 0) {
+      return res.status(400).json({ error: 'Email is already registered' });
     }
 
     // Hash password
