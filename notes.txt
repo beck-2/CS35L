@@ -34,3 +34,8 @@ Add a little "application form released" event on the timeline when the form is 
 allow applicant to sign in with school sso (start w ucla) and see all applications open
 clubs can choose to make the timeline public (can deselect which events applicants are able to view, and applicants can only view their title)
 Create a readme for the next agent to take over from you, and add the file to gitignore. 
+
+add an icon for review events, and allow creator to tag who event is for
+scrollable bar
+
+analytics dashboard should automatically show form linked to the application event

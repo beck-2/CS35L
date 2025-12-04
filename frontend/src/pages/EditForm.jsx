@@ -12,6 +12,7 @@ function EditForm() {
   const [previewMode, setPreviewMode] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [copyStatus, setCopyStatus] = useState('idle');
+  const [showSaveNotification, setShowSaveNotification] = useState(false);
 
   useEffect(() => {
     fetch(`/api/forms/${id}`)
@@ -37,7 +38,9 @@ function EditForm() {
       description: `Question ${questionNumber}`,
       required: false,
       ...(type === 'radio' || type === 'checkbox' ? { options: ['Option 1'] } : {}),
-      ...(type === 'file' ? { accept: '.pdf,.doc,.docx' } : {})
+      ...(type === 'file' ? { accept: '.pdf,.doc,.docx' } : {}),
+      ...(type === 'email' ? { validation: '^(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$' } : {}),
+      ...(type === 'gpa' ? { validation: '^(?:[0-3]\\.\\d+|4\\.00)$' } : {})
     };
     setFields([...fields, newField]);
     setSelectedField(newField.id);
@@ -80,7 +83,8 @@ function EditForm() {
       });
       const updated = await response.json();
       setForm(updated);
-      alert('Form saved successfully!');
+      setShowSaveNotification(true);
+      setTimeout(() => setShowSaveNotification(false), 3000);
     } catch (error) {
       console.error('Error saving form:', error);
       alert('Error saving form');
@@ -351,6 +355,117 @@ function EditForm() {
           </div>
         );
 
+      case 'email':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '24px' }}>
+            {description && (
+              <div style={{ marginBottom: '8px', color: '#737373', fontSize: '14px', fontWeight: '500' }}>
+                {description}
+              </div>
+            )}
+            <label style={{ 
+              display: 'block',
+              color: '#0a0a0a',
+              fontSize: '16px',
+              fontWeight: '500',
+              marginBottom: '8px',
+            }}>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: '#dc3545', marginLeft: '4px' }}> *</span>}
+            </label>
+            <input
+              type="email"
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginTop: '4px', 
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#737373',
+                boxSizing: 'border-box',
+              }}
+              placeholder="Please enter your email"
+            />
+          </div>
+        );
+
+      case 'gpa':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '24px' }}>
+            {description && (
+              <div style={{ marginBottom: '8px', color: '#737373', fontSize: '14px', fontWeight: '500' }}>
+                {description}
+              </div>
+            )}
+            <label style={{ 
+              display: 'block',
+              color: '#0a0a0a',
+              fontSize: '16px',
+              fontWeight: '500',
+              marginBottom: '8px',
+            }}>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: '#dc3545', marginLeft: '4px' }}> *</span>}
+            </label>
+            <input
+              type="text"
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginTop: '4px', 
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#737373',
+                boxSizing: 'border-box',
+              }}
+              placeholder="Please enter your GPA"
+            />
+          </div>
+        );
+
+      case 'graduation_year':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '24px' }}>
+            {description && (
+              <div style={{ marginBottom: '8px', color: '#737373', fontSize: '14px', fontWeight: '500' }}>
+                {description}
+              </div>
+            )}
+            <label style={{ 
+              display: 'block',
+              color: '#0a0a0a',
+              fontSize: '16px',
+              fontWeight: '500',
+              marginBottom: '8px',
+            }}>
+              {field.label || 'Untitled Field'}
+              {field.required && <span style={{ color: '#dc3545', marginLeft: '4px' }}> *</span>}
+            </label>
+            <input
+              type="number"
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginTop: '4px', 
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#737373',
+                boxSizing: 'border-box',
+              }}
+              placeholder="Please enter your graduation year"
+            />
+          </div>
+        );
+
       default:
         return null;
     }
@@ -363,7 +478,31 @@ function EditForm() {
         paddingTop: '90px',
         backgroundColor: '#F5FCEE',
         minHeight: '100vh',
+        position: 'relative',
       }}>
+        {showSaveNotification && (
+          <div style={{
+            position: 'fixed',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#4D7298',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            fontSize: '15px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'slideDown 0.3s ease-out',
+          }}>
+            <span style={{ fontSize: '18px' }}>✓</span>
+            Form saved
+          </div>
+        )}
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{ 
             display: 'flex', 
@@ -412,7 +551,7 @@ function EditForm() {
                 disabled={!publicLink}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#84BF5F',
+                  backgroundColor: '#4D7298',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -500,6 +639,29 @@ function EditForm() {
 
   return (
     <>
+      {showSaveNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#4D7298',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '10px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          zIndex: 1000,
+          fontSize: '15px',
+          fontWeight: '500',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'slideDown 0.3s ease-out',
+        }}>
+          <span style={{ fontSize: '18px' }}>✓</span>
+          Form saved
+        </div>
+      )}
       <div style={{ 
         backgroundColor: '#F5FCEE',
         minHeight: '100vh',
@@ -608,7 +770,7 @@ function EditForm() {
                 disabled={!publicLink}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#84BF5F',
+                  backgroundColor: '#4D7298',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -660,6 +822,9 @@ function EditForm() {
                     { type: 'radio', label: 'Multiple Choice' },
                     { type: 'checkbox', label: 'Checkboxes' },
                     { type: 'file', label: 'File Upload' },
+                    { type: 'email', label: 'Email' },
+                    { type: 'gpa', label: 'GPA' },
+                    { type: 'graduation_year', label: 'Graduation Year' },
                   ].map(({ type, label }) => (
                     <button 
                       key={type}
@@ -1298,7 +1463,7 @@ function EditForm() {
                   rel="noopener noreferrer"
                   style={{
                     padding: '10px 20px',
-                    backgroundColor: '#84BF5F',
+                    backgroundColor: '#4D7298',
                     color: 'white',
                     borderRadius: '8px',
                     textDecoration: 'none',
