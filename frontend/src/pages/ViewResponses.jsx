@@ -20,6 +20,18 @@ function ViewResponses() {
   const [averages, setAverages] = useState({});
   const [isSubmitting, setIsSubmitting] = useState({});
 
+  // Helper function to get field label from field ID
+  const getFieldLabel = (fieldId) => {
+    if (!form || !form.definition || !form.definition.fields) {
+      console.log('Form definition not available:', { form, fieldId });
+      return fieldId;
+    }
+    console.log('Looking for field:', fieldId, 'in fields:', form.definition.fields);
+    const field = form.definition.fields.find(f => f.id === fieldId);
+    console.log('Found field:', field);
+    return field ? field.label : fieldId;
+  };
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/forms/${id}`).then(res => res.json()),
@@ -386,11 +398,13 @@ function ViewResponses() {
                         flexDirection: 'column',
                         gap: '8px',
                       }}>
-                        {Object.entries(data).slice(0, 2).map(([question, answer], idx) => {
+                        {Object.entries(data).slice(0, 2).map(([fieldId, answer], idx) => {
                           // Skip file uploads in preview
                           if (typeof answer === 'string' && answer.startsWith('file:')) {
                             return null;
                           }
+                          
+                          const label = getFieldLabel(fieldId);
                           
                           return (
                             <div key={idx} style={{ fontSize: '13px' }}>
@@ -398,7 +412,7 @@ function ViewResponses() {
                                 color: '#737373',
                                 fontWeight: '500',
                               }}>
-                                {question}:{' '}
+                                {label}:{' '}
                               </span>
                               <span style={{ color: '#0a0a0a' }}>
                                 {Array.isArray(answer) 
@@ -434,9 +448,12 @@ function ViewResponses() {
                         flexDirection: 'column',
                         gap: '20px',
                       }}>
-                        {Object.entries(data).map(([key, value]) => (
+                        {Object.entries(data).map(([fieldId, value]) => {
+                          const label = getFieldLabel(fieldId);
+                          
+                          return (
                           <div 
-                            key={key} 
+                            key={fieldId} 
                             style={{ 
                               padding: '16px',
                               backgroundColor: '#F5FCEE',
@@ -452,7 +469,7 @@ function ViewResponses() {
                               textTransform: 'uppercase',
                               letterSpacing: '0.5px',
                             }}>
-                              {key}
+                              {label}
                             </p>
                             <div style={{ 
                               color: '#0a0a0a',
@@ -558,7 +575,8 @@ function ViewResponses() {
                               )}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {/* Rating Section */}

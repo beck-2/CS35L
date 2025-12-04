@@ -8,6 +8,18 @@ function Applicants() {
   const [loading, setLoading] = useState(true);
   const [expandedForms, setExpandedForms] = useState({});
 
+  // Helper function to get field label from field ID
+  const getFieldLabel = (form, fieldId) => {
+    if (!form || !form.definition || !form.definition.fields) {
+      console.log('Applicants - Form definition not available:', { form, fieldId });
+      return fieldId;
+    }
+    console.log('Applicants - Looking for field:', fieldId, 'in form:', form.name, 'fields:', form.definition.fields);
+    const field = form.definition.fields.find(f => f.id === fieldId);
+    console.log('Applicants - Found field:', field);
+    return field ? field.label : fieldId;
+  };
+
   useEffect(() => {
     fetchForms();
   }, []);
@@ -16,10 +28,19 @@ function Applicants() {
     try {
       const formsResponse = await fetch('/api/forms');
       const formsData = await formsResponse.json();
-      setForms(formsData);
+      
+      // Fetch full form details (including definition) for each form
+      const fullFormsPromises = formsData.map(form =>
+        fetch(`/api/forms/${form.id}`)
+          .then(res => res.json())
+          .catch(() => form) // Fallback to basic form data if fetch fails
+      );
+      
+      const fullForms = await Promise.all(fullFormsPromises);
+      setForms(fullForms);
 
       // Fetch responses for all forms
-      const responsesPromises = formsData.map(form =>
+      const responsesPromises = fullForms.map(form =>
         fetch(`/api/forms/${form.id}/responses`)
           .then(res => res.json())
           .then(responses => responses.map(r => ({ ...r, form_id: form.id, form_name: form.name })))
@@ -370,13 +391,16 @@ function Applicants() {
                                       flexDirection: 'column',
                                       gap: '8px',
                                     }}>
-                                      {entries.map(([question, answer], idx) => (
+                                      {entries.map(([fieldId, answer], idx) => {
+                                        const label = getFieldLabel(form, fieldId);
+                                        
+                                        return (
                                         <div key={idx} style={{ fontSize: '13px' }}>
                                           <span style={{ 
                                             color: '#737373',
                                             fontWeight: '500',
                                           }}>
-                                            {question}:{' '}
+                                            {label}:{' '}
                                           </span>
                                           <span style={{ color: '#0a0a0a' }}>
                                             {String(answer).length > 80 
@@ -384,7 +408,8 @@ function Applicants() {
                                               : String(answer)}
                                           </span>
                                         </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   )}
 
