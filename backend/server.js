@@ -505,8 +505,13 @@ app.post('/api/forms/:id/responses/export', async (req, res) => {
 
 app.get('/api/events', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const result = await pool.query(
-      'SELECT * FROM events ORDER BY position ASC, id ASC'
+      'SELECT * FROM events WHERE user_id = $1 ORDER BY position ASC, id ASC',
+      [req.userId]
     );
     
     const acceptanceEvent = result.rows.find(e => e.name === 'Acceptance');
@@ -525,16 +530,20 @@ app.get('/api/events', async (req, res) => {
 
 app.post('/api/events', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { name, event_date, position, notes, members_only, location } = req.body;
     if (!name || !event_date) {
       return res.status(400).json({ error: 'name and event_date are required' });
     }
 
     const result = await pool.query(
-      `INSERT INTO events (name, event_date, position, is_system, notes, members_only, location)
-       VALUES ($1, $2, $3, FALSE, $4, $5, $6)
+      `INSERT INTO events (name, event_date, position, is_system, notes, members_only, location, user_id)
+       VALUES ($1, $2, $3, FALSE, $4, $5, $6, $7)
        RETURNING *`,
-      [name, event_date, position || 1, notes || null, members_only || false, location || null]
+      [name, event_date, position || 1, notes || null, members_only || false, location || null, req.userId]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -544,12 +553,21 @@ app.post('/api/events', async (req, res) => {
 
 app.put('/api/events/:id', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
     const { name, event_date, position, notes, members_only, location } = req.body;
 
-    const eventCheck = await pool.query('SELECT is_system FROM events WHERE id = $1', [id]);
+    const eventCheck = await pool.query('SELECT is_system, user_id FROM events WHERE id = $1', [id]);
     if (eventCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Check if event belongs to user
+    if (eventCheck.rows[0].user_id !== req.userId) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     if (eventCheck.rows[0].is_system) {
@@ -624,6 +642,10 @@ app.put('/api/events/:id', async (req, res) => {
 
 app.put('/api/events/reorder', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { events } = req.body;
     if (!Array.isArray(events)) {
       return res.status(400).json({ error: 'events array is required' });
@@ -636,18 +658,24 @@ app.put('/api/events/reorder', async (req, res) => {
       let maxPosition = Math.max(...events.map(e => e.position));
       
       for (const event of events) {
-        const eventCheck = await client.query('SELECT name FROM events WHERE id = $1', [event.id]);
+        // Verify event belongs to user
+        const eventCheck = await client.query('SELECT name, user_id FROM events WHERE id = $1', [event.id]);
+        if (eventCheck.rows.length === 0 || eventCheck.rows[0].user_id !== req.userId) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({ error: 'Access denied' });
+        }
+        
         const eventName = eventCheck.rows[0]?.name;
         
         if (eventName === 'Acceptance') {
           await client.query(
-            'UPDATE events SET position = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-            [maxPosition, event.id]
+            'UPDATE events SET position = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+            [maxPosition, event.id, req.userId]
           );
         } else {
           await client.query(
-            'UPDATE events SET position = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-            [event.position, event.id]
+            'UPDATE events SET position = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+            [event.position, event.id, req.userId]
           );
         }
       }
@@ -667,11 +695,15 @@ app.put('/api/events/reorder', async (req, res) => {
 
 app.delete('/api/events/:id', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
 
     const result = await pool.query(
-      'DELETE FROM events WHERE id = $1 AND is_system = FALSE RETURNING id',
-      [id]
+      'DELETE FROM events WHERE id = $1 AND is_system = FALSE AND user_id = $2 RETURNING id',
+      [id, req.userId]
     );
 
     if (result.rows.length === 0) {
@@ -686,14 +718,23 @@ app.delete('/api/events/:id', async (req, res) => {
 
 app.get('/api/events/:id/form', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
     const result = await pool.query(
-      'SELECT form_id FROM events WHERE id = $1',
+      'SELECT form_id, user_id FROM events WHERE id = $1',
       [id]
     );
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Check if event belongs to user
+    if (result.rows[0].user_id !== req.userId) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const formId = result.rows[0].form_id;
@@ -702,8 +743,8 @@ app.get('/api/events/:id/form', async (req, res) => {
     }
 
     const formResult = await pool.query(
-      'SELECT * FROM forms WHERE id = $1',
-      [formId]
+      'SELECT * FROM forms WHERE id = $1 AND user_id = $2',
+      [formId, req.userId]
     );
     res.json({ form_id: formId, form: formResult.rows[0] || null });
   } catch (error) {
@@ -713,11 +754,15 @@ app.get('/api/events/:id/form', async (req, res) => {
 
 app.post('/api/events/:id/form', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
     const { name, definition } = req.body;
 
     const eventResult = await pool.query(
-      'SELECT form_id FROM events WHERE id = $1',
+      'SELECT form_id, user_id FROM events WHERE id = $1',
       [id]
     );
 
@@ -725,12 +770,17 @@ app.post('/api/events/:id/form', async (req, res) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
+    // Check if event belongs to user
+    if (eventResult.rows[0].user_id !== req.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const existingFormId = eventResult.rows[0].form_id;
 
     if (existingFormId) {
       const formResult = await pool.query(
-        'SELECT * FROM forms WHERE id = $1',
-        [existingFormId]
+        'SELECT * FROM forms WHERE id = $1 AND user_id = $2',
+        [existingFormId, req.userId]
       );
       return res.json(formResult.rows[0]);
     }
@@ -740,15 +790,15 @@ app.post('/api/events/:id/form', async (req, res) => {
     const formName = name || 'Application Form';
 
     const formResult = await pool.query(
-      `INSERT INTO forms (name, public_id, admin_id, definition) 
-       VALUES ($1, $2, $3, $4) 
+      `INSERT INTO forms (name, public_id, admin_id, definition, user_id) 
+       VALUES ($1, $2, $3, $4, $5) 
        RETURNING *`,
-      [formName, publicId, adminId, JSON.stringify(definition || { fields: [] })]
+      [formName, publicId, adminId, JSON.stringify(definition || { fields: [] }), req.userId]
     );
 
     await pool.query(
-      'UPDATE events SET form_id = $1 WHERE id = $2',
-      [formResult.rows[0].id, id]
+      'UPDATE events SET form_id = $1 WHERE id = $2 AND user_id = $3',
+      [formResult.rows[0].id, id, req.userId]
     );
 
     res.json(formResult.rows[0]);
