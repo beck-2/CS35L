@@ -53,10 +53,10 @@ function CreateForm() {
 
         <div style={{
           backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '32px',
-          boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
-          border: '1px solid #f5f5f4',
+          borderRadius: '20px',
+          padding: '36px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+          border: '1px solid #f0f0f0',
         }}>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '24px' }}>
@@ -64,8 +64,8 @@ function CreateForm() {
                 display: 'block',
                 color: '#0a0a0a',
                 fontSize: '16px',
-                fontWeight: '500',
-                marginBottom: '8px',
+                fontWeight: '600',
+                marginBottom: '10px',
               }}>
                 Form Name
               </label>
@@ -77,17 +77,17 @@ function CreateForm() {
                 required
                 style={{
                   width: '100%',
-                  padding: '12px 16px',
+                  padding: '14px 18px',
                   fontSize: '16px',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '8px',
+                  border: '2px solid #e5e5e5',
+                  borderRadius: '12px',
                   outline: 'none',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.3s ease',
                   boxSizing: 'border-box',
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = '#9DC3C2';
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(157,195,194,0.1)';
+                  e.currentTarget.style.boxShadow = '0 0 0 4px rgba(157,195,194,0.1)';
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#e5e5e5';
@@ -95,28 +95,32 @@ function CreateForm() {
                 }}
               />
             </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
               <button 
                 type="button"
                 onClick={() => navigate('/admin')}
                 style={{ 
-                  padding: '12px 24px',
+                  padding: '14px 28px',
                   backgroundColor: 'white',
                   color: '#737373',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '8px',
+                  border: '2px solid #e5e5e5',
+                  borderRadius: '12px',
                   cursor: 'pointer',
-                  fontWeight: '500',
+                  fontWeight: '600',
                   fontSize: '14px',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.3s ease',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = '#9DC3C2';
                   e.currentTarget.style.color = '#4D7298';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = '#e5e5e5';
                   e.currentTarget.style.color = '#737373';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 Cancel
@@ -125,27 +129,30 @@ function CreateForm() {
                 type="submit" 
                 disabled={saving}
                 style={{
-                  padding: '12px 24px',
+                  padding: '14px 28px',
                   backgroundColor: saving ? '#9DC3C2' : '#4D7298',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   cursor: saving ? 'not-allowed' : 'pointer',
-                  fontWeight: '500',
+                  fontWeight: '600',
                   fontSize: '14px',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.3s ease',
                   opacity: saving ? 0.7 : 1,
+                  boxShadow: saving ? 'none' : '0 2px 8px rgba(77, 114, 152, 0.2)',
                 }}
                 onMouseEnter={(e) => {
                   if (!saving) {
                     e.currentTarget.style.backgroundColor = '#77A6B6';
                     e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(77, 114, 152, 0.3)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!saving) {
                     e.currentTarget.style.backgroundColor = '#4D7298';
                     e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(77, 114, 152, 0.2)';
                   }
                 }}
               >

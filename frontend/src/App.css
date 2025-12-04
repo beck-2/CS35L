@@ -3,3 +3,35 @@ body {
   padding-top: 70px;
 }
 
+/* Global button improvements */
+button {
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Input field improvements */
+input, textarea, select {
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(77, 114, 152, 0.1);
+}
+
+/* Card improvements */
+.card, [style*="borderRadius: '16px'"] {
+  border-radius: 16px !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+

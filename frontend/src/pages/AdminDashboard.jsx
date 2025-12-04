@@ -87,23 +87,26 @@ function AdminDashboard() {
           </div>
           <Link to="/admin/forms/new">
             <button style={{
-              padding: '12px 24px',
+              padding: '14px 28px',
               backgroundColor: '#4D7298',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               cursor: 'pointer',
-              fontWeight: '500',
+              fontWeight: '600',
               fontSize: '14px',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 8px rgba(77, 114, 152, 0.2)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#77A6B6';
               e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(77, 114, 152, 0.3)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#4D7298';
               e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(77, 114, 152, 0.2)';
             }}>
               Create New Form
             </button>
@@ -115,31 +118,31 @@ function AdminDashboard() {
             textAlign: 'center', 
             padding: '60px 20px',
             backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+            borderRadius: '20px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
           }}>
             <p style={{ color: '#737373', fontSize: '18px', marginBottom: '8px' }}>No forms yet.</p>
             <p style={{ color: '#a3a3a3', fontSize: '14px' }}>Create your first form to get started!</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
             {forms.map(form => (
               <div 
                 key={form.id} 
                 style={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #f5f5f4',
-                  padding: '24px', 
-                  borderRadius: '16px',
-                  boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+                  border: '1px solid #f0f0f0',
+                  padding: '28px', 
+                  borderRadius: '20px',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
                   transition: 'all 0.3s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,0,0,0.1)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.12)';
                   e.currentTarget.style.transform = 'translateY(-4px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 20px rgba(0,0,0,0.06)';
+                  e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.08)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
@@ -170,21 +173,25 @@ function AdminDashboard() {
                   <Link 
                     to={`/admin/forms/${form.id}/edit`} 
                     style={{ 
-                      padding: '8px 16px',
+                      padding: '10px 18px',
                       backgroundColor: '#9DC3C2',
                       color: 'white',
                       textDecoration: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '10px',
                       fontSize: '13px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease',
+                      transition: 'all 0.3s ease',
                       display: 'inline-block',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = '#77A6B6';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(157, 195, 194, 0.3)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#9DC3C2';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
                     Edit
@@ -192,21 +199,25 @@ function AdminDashboard() {
                   <Link 
                     to={`/admin/forms/${form.id}/responses`} 
                     style={{ 
-                      padding: '8px 16px',
+                      padding: '10px 18px',
                       backgroundColor: '#77A6B6',
                       color: 'white',
                       textDecoration: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '10px',
                       fontSize: '13px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease',
+                      transition: 'all 0.3s ease',
                       display: 'inline-block',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = '#4D7298';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(119, 166, 182, 0.3)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#77A6B6';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
                     View Responses
@@ -216,23 +227,25 @@ function AdminDashboard() {
                     target="_blank" 
                     rel="noopener noreferrer" 
                     style={{ 
-                      padding: '8px 16px',
+                      padding: '10px 18px',
                       backgroundColor: '#84BF5F',
                       color: 'white',
                       textDecoration: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '10px',
                       fontSize: '13px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease',
+                      transition: 'all 0.3s ease',
                       display: 'inline-block',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = '0.9';
-                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.backgroundColor = '#6fa94f';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(132, 191, 95, 0.3)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = '1';
-                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.backgroundColor = '#84BF5F';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
                     Public Link
@@ -241,25 +254,29 @@ function AdminDashboard() {
                     onClick={() => handleDelete(form.id, form.name)}
                     disabled={deleting === form.id}
                     style={{
-                      padding: '8px 16px',
+                      padding: '10px 18px',
                       color: '#dc3545',
-                      background: 'none',
-                      border: '1px solid #f5f5f4',
-                      borderRadius: '6px',
+                      background: 'white',
+                      border: '2px solid #f5f5f4',
+                      borderRadius: '10px',
                       cursor: deleting === form.id ? 'not-allowed' : 'pointer',
                       fontSize: '13px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease',
+                      transition: 'all 0.3s ease',
                     }}
                     onMouseEnter={(e) => {
                       if (deleting !== form.id) {
                         e.currentTarget.style.backgroundColor = '#fee';
                         e.currentTarget.style.borderColor = '#dc3545';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.2)';
                       }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.backgroundColor = 'white';
                       e.currentTarget.style.borderColor = '#f5f5f4';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
                     {deleting === form.id ? 'Deleting...' : 'Delete'}
