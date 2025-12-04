@@ -319,7 +319,7 @@ app.get('/api/forms/:id/responses', async (req, res) => {
     }
     
     const result = await pool.query(
-      `SELECT id, form_id, response_data, submitted_at, applicant_name, applicant_email
+      `SELECT id, form_id, response_data, submitted_at, applicant_name, applicant_email, status
        FROM form_responses 
        WHERE form_id = $1 
        ORDER BY submitted_at DESC`,
@@ -440,6 +440,68 @@ app.get('/api/responses/:id/ratings/average', async (req, res) => {
       average: parseFloat(result.rows[0].average).toFixed(1),
       count: parseInt(result.rows[0].count)
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update applicant status (accept/reject/pending)
+app.patch('/api/responses/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    const userId = req.session?.userId;
+
+    // Valid statuses for now: pending, accepted, rejected
+    const validStatuses = ['pending', 'accepted', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // Get current status
+    const currentResult = await pool.query(
+      'SELECT status FROM form_responses WHERE id = $1',
+      [id]
+    );
+
+    if (currentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Response not found' });
+    }
+
+    const previousStatus = currentResult.rows[0].status;
+
+    // Update status
+    const updateResult = await pool.query(
+      'UPDATE form_responses SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    // Record status change in history
+    await pool.query(
+      `INSERT INTO status_history (response_id, previous_status, new_status, changed_by, notes)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, previousStatus, status, userId, notes || null]
+    );
+
+    res.json(updateResult.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get status history for a response
+app.get('/api/responses/:id/status-history', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT sh.*, u.username as changed_by_username
+       FROM status_history sh
+       LEFT JOIN users u ON sh.changed_by = u.id
+       WHERE sh.response_id = $1
+       ORDER BY sh.changed_at DESC`,
+      [id]
+    );
+    res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft, Check, X } from 'lucide-react';
 import RatingForm from '../components/RatingForm';
 import RatingsList from '../components/RatingsList';
 
@@ -19,6 +19,7 @@ function ViewResponses() {
   const [ratings, setRatings] = useState({});
   const [averages, setAverages] = useState({});
   const [isSubmitting, setIsSubmitting] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState({});
 
   // Helper function to get field label from field ID
   const getFieldLabel = (fieldId) => {
@@ -101,6 +102,37 @@ function ViewResponses() {
       return false;
     } finally {
       setIsSubmitting(prev => ({ ...prev, [responseId]: false }));
+    }
+  };
+
+  const updateStatus = async (responseId, newStatus) => {
+    setUpdatingStatus(prev => ({ ...prev, [responseId]: true }));
+
+    try {
+      const response = await fetch(`/api/responses/${responseId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      const updatedResponse = await response.json();
+      
+      // Update local state
+      setResponses(prev => 
+        prev.map(r => r.id === responseId ? { ...r, status: updatedResponse.status } : r)
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
+      return false;
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [responseId]: false }));
     }
   };
 
@@ -368,23 +400,44 @@ function ViewResponses() {
                         </div>
                       </div>
                       
-                      {/* Submission Date */}
-                      <span style={{ 
-                        fontSize: '13px', 
-                        color: '#a3a3a3',
-                        backgroundColor: '#F5FCEE',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        fontWeight: '500',
-                      }}>
-                        {new Date(response.submitted_at).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Status Badge */}
+                        <span style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '600',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 
+                            response.status === 'accepted' ? '#d4edda' : 
+                            response.status === 'rejected' ? '#f8d7da' : 
+                            '#e2e8f0',
+                          color: 
+                            response.status === 'accepted' ? '#155724' : 
+                            response.status === 'rejected' ? '#721c24' : 
+                            '#475569',
+                          textTransform: 'capitalize',
+                        }}>
+                          {response.status || 'pending'}
+                        </span>
+
+                        {/* Submission Date */}
+                        <span style={{ 
+                          fontSize: '13px', 
+                          color: '#a3a3a3',
+                          backgroundColor: '#F5FCEE',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontWeight: '500',
+                        }}>
+                          {new Date(response.submitted_at).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Preview of first 2 questions when collapsed */}
@@ -585,6 +638,127 @@ function ViewResponses() {
                         paddingTop: '24px',
                         borderTop: '2px solid #e5e5e5',
                       }}>
+                        {/* Accept/Reject Buttons */}
+                        <div style={{ 
+                          marginBottom: '24px',
+                          display: 'flex',
+                          gap: '12px',
+                          alignItems: 'center',
+                        }}>
+                          <h3 style={{ 
+                            margin: 0,
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#2d3436',
+                            marginRight: 'auto',
+                          }}>
+                            Application Status
+                          </h3>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateStatus(response.id, 'accepted');
+                            }}
+                            disabled={updatingStatus[response.id] || response.status === 'accepted'}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '10px 20px',
+                              backgroundColor: response.status === 'accepted' ? '#d4edda' : '#28a745',
+                              color: response.status === 'accepted' ? '#155724' : 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: response.status === 'accepted' || updatingStatus[response.id] ? 'not-allowed' : 'pointer',
+                              opacity: updatingStatus[response.id] ? 0.6 : 1,
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (response.status !== 'accepted' && !updatingStatus[response.id]) {
+                                e.currentTarget.style.backgroundColor = '#218838';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (response.status !== 'accepted') {
+                                e.currentTarget.style.backgroundColor = '#28a745';
+                              }
+                            }}
+                          >
+                            <Check size={16} />
+                            {response.status === 'accepted' ? 'Accepted' : 'Accept'}
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateStatus(response.id, 'rejected');
+                            }}
+                            disabled={updatingStatus[response.id] || response.status === 'rejected'}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '10px 20px',
+                              backgroundColor: response.status === 'rejected' ? '#f8d7da' : '#dc3545',
+                              color: response.status === 'rejected' ? '#721c24' : 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: response.status === 'rejected' || updatingStatus[response.id] ? 'not-allowed' : 'pointer',
+                              opacity: updatingStatus[response.id] ? 0.6 : 1,
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (response.status !== 'rejected' && !updatingStatus[response.id]) {
+                                e.currentTarget.style.backgroundColor = '#c82333';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (response.status !== 'rejected') {
+                                e.currentTarget.style.backgroundColor = '#dc3545';
+                              }
+                            }}
+                          >
+                            <X size={16} />
+                            {response.status === 'rejected' ? 'Rejected' : 'Reject'}
+                          </button>
+
+                          {response.status !== 'pending' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateStatus(response.id, 'pending');
+                              }}
+                              disabled={updatingStatus[response.id]}
+                              style={{
+                                padding: '10px 16px',
+                                backgroundColor: 'white',
+                                color: '#4D7298',
+                                border: '1px solid #4D7298',
+                                borderRadius: '8px',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                cursor: updatingStatus[response.id] ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!updatingStatus[response.id]) {
+                                  e.currentTarget.style.backgroundColor = '#F5FCEE';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }}
+                            >
+                              Reset to Pending
+                            </button>
+                          )}
+                        </div>
+
                         <RatingsList
                           ratings={ratings[response.id]}
                           average={averages[response.id]}
