@@ -18,7 +18,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FileText, Search, Phone, Users, CheckCircle, Briefcase, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { FileText, Search, Phone, Users, CheckCircle, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Color styles matching Figma design
 const colorStyles = {
@@ -182,20 +182,6 @@ function SortableEvent({ event, onDelete, onEdit, index, total, onEventClick, se
             }
           }}
         >
-          {/* Members only lock icon */}
-          {event.members_only && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '12px',
-                left: '12px',
-                zIndex: 2,
-              }}
-            >
-              <Lock size={14} color="#9ca3af" strokeWidth={2} />
-            </div>
-          )}
-
           <div
             style={{
               display: 'flex',
@@ -410,7 +396,6 @@ function Timeline() {
   const [newEventName, setNewEventName] = useState('');
   const [newEventDate, setNewEventDate] = useState('');
   const [newEventNotes, setNewEventNotes] = useState('');
-  const [newEventMembersOnly, setNewEventMembersOnly] = useState(false);
   const [newEventLocation, setNewEventLocation] = useState('');
   const [selectedEventId, setSelectedEventId] = useState(null);
   const scrollContainerRef = useRef(null);
@@ -514,7 +499,6 @@ function Timeline() {
           event_date: newEventDate,
           position,
           notes: newEventNotes || null,
-          members_only: newEventMembersOnly,
           location: newEventLocation || null,
         }),
       });
@@ -525,7 +509,6 @@ function Timeline() {
       setNewEventName('');
       setNewEventDate('');
       setNewEventNotes('');
-      setNewEventMembersOnly(false);
       setNewEventLocation('');
       fetchEvents();
     } catch (error) {
@@ -545,7 +528,6 @@ function Timeline() {
           name: newEventName,
           event_date: newEventDate,
           notes: newEventNotes || null,
-          members_only: newEventMembersOnly,
           location: newEventLocation || null,
         }),
       });
@@ -567,7 +549,6 @@ function Timeline() {
       setNewEventName('');
       setNewEventDate('');
       setNewEventNotes('');
-      setNewEventMembersOnly(false);
       setNewEventLocation('');
       fetchEvents();
     } catch (error) {
@@ -678,7 +659,6 @@ function Timeline() {
               setNewEventName('');
               setNewEventDate('');
               setNewEventNotes('');
-              setNewEventMembersOnly(false);
               setNewEventLocation('');
             }}
             style={{
@@ -718,53 +698,57 @@ function Timeline() {
                   overflow: 'hidden',
                 }}
               >
-              {/* Left Arrow */}
-              <button
-                onClick={scrollLeft}
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 10,
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                }}
-              >
-                <ChevronLeft size={20} color="#666" />
-              </button>
+              {events.length >= 6 && (
+                <>
+                  {/* Left Arrow */}
+                  <button
+                    onClick={scrollLeft}
+                    style={{
+                      position: 'absolute',
+                      left: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <ChevronLeft size={20} color="#666" />
+                  </button>
 
-              {/* Right Arrow */}
-              <button
-                onClick={scrollRight}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 10,
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                }}
-              >
-                <ChevronRight size={20} color="#666" />
-              </button>
+                  {/* Right Arrow */}
+                  <button
+                    onClick={scrollRight}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+                </>
+              )}
 
               <div
                 ref={scrollContainerRef}
@@ -830,7 +814,6 @@ function Timeline() {
                             const dateStr = e.event_date ? new Date(e.event_date).toISOString().split('T')[0] : '';
                             setNewEventDate(dateStr);
                             setNewEventNotes(e.notes || '');
-                            setNewEventMembersOnly(e.members_only || false);
                             setNewEventLocation(e.location || '');
                             setShowAddModal(true);
                             setSelectedEventId(null); // Deselect when editing
@@ -869,7 +852,6 @@ function Timeline() {
               setNewEventName('');
               setNewEventDate('');
               setNewEventNotes('');
-              setNewEventMembersOnly(false);
               setNewEventLocation('');
             }}
           >
@@ -930,16 +912,6 @@ function Timeline() {
                   />
                 </label>
               </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={newEventMembersOnly}
-                    onChange={(e) => setNewEventMembersOnly(e.target.checked)}
-                  />
-                  <span>Members only (visible to members only)</span>
-                </label>
-              </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => {
@@ -948,7 +920,6 @@ function Timeline() {
                     setNewEventName('');
                     setNewEventDate('');
                     setNewEventNotes('');
-                    setNewEventMembersOnly(false);
                     setNewEventLocation('');
                   }}
                   style={{ padding: '8px 16px' }}
