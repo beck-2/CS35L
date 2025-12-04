@@ -1,16 +1,42 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import session from 'express-session';
 import pool from './db/connection.js';
 import { generateResponsesCSV, generateExportFilename } from './services/exportService.js';
+import authRoutes from './routes/auth.js';
+import { attachUser } from './middleware/auth.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// CORS configuration to allow credentials
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
 app.use(express.json({ limit: '50mb' }));
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Attach user info to all requests
+app.use(attachUser);
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -146,8 +172,14 @@ function generateId() {
 
 app.get('/api/forms', async (req, res) => {
   try {
+    // Only return forms for the logged-in user
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const result = await pool.query(
-      'SELECT id, name, public_id, created_at, updated_at FROM forms ORDER BY created_at DESC'
+      'SELECT id, name, public_id, created_at, updated_at FROM forms WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.userId]
     );
     res.json(result.rows);
   } catch (error) {
@@ -157,10 +189,14 @@ app.get('/api/forms', async (req, res) => {
 
 app.get('/api/forms/:id', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
     const result = await pool.query(
-      'SELECT * FROM forms WHERE id = $1',
-      [id]
+      'SELECT * FROM forms WHERE id = $1 AND user_id = $2',
+      [id, req.userId]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Form not found' });
@@ -189,6 +225,10 @@ app.get('/api/forms/public/:publicId', async (req, res) => {
 
 app.post('/api/forms', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { name, definition } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'name is required' });
@@ -198,10 +238,10 @@ app.post('/api/forms', async (req, res) => {
     const adminId = 'admin_' + generateId();
 
     const result = await pool.query(
-      `INSERT INTO forms (name, public_id, admin_id, definition) 
-       VALUES ($1, $2, $3, $4) 
+      `INSERT INTO forms (name, public_id, admin_id, definition, user_id) 
+       VALUES ($1, $2, $3, $4, $5) 
        RETURNING id, name, public_id, admin_id, definition, created_at, updated_at`,
-      [name, publicId, adminId, JSON.stringify(definition || { fields: [] })]
+      [name, publicId, adminId, JSON.stringify(definition || { fields: [] }), req.userId]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -211,6 +251,10 @@ app.post('/api/forms', async (req, res) => {
 
 app.put('/api/forms/:id', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
     const { name, definition } = req.body;
 
@@ -219,9 +263,9 @@ app.put('/api/forms/:id', async (req, res) => {
        SET name = COALESCE($1, name), 
            definition = COALESCE($2::jsonb, definition),
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3
+       WHERE id = $3 AND user_id = $4
        RETURNING *`,
-      [name, definition ? JSON.stringify(definition) : null, id]
+      [name, definition ? JSON.stringify(definition) : null, id, req.userId]
     );
 
     if (result.rows.length === 0) {
@@ -235,11 +279,15 @@ app.put('/api/forms/:id', async (req, res) => {
 
 app.delete('/api/forms/:id', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
 
     const result = await pool.query(
-      'DELETE FROM forms WHERE id = $1 RETURNING id, name',
-      [id]
+      'DELETE FROM forms WHERE id = $1 AND user_id = $2 RETURNING id, name',
+      [id, req.userId]
     );
 
     if (result.rows.length === 0) {
@@ -254,7 +302,22 @@ app.delete('/api/forms/:id', async (req, res) => {
 
 app.get('/api/forms/:id/responses', async (req, res) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { id } = req.params;
+    
+    // First verify the form belongs to the user
+    const formCheck = await pool.query(
+      'SELECT id FROM forms WHERE id = $1 AND user_id = $2',
+      [id, req.userId]
+    );
+    
+    if (formCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Form not found' });
+    }
+    
     const result = await pool.query(
       `SELECT id, form_id, response_data, submitted_at, applicant_name, applicant_email
        FROM form_responses 
