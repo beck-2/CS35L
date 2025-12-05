@@ -863,14 +863,32 @@ app.delete('/api/events/:id', async (req, res) => {
     
     const { id } = req.params;
 
+    // First, get the event name and form_id before deleting
+    const eventInfo = await pool.query(
+      'SELECT name, form_id FROM events WHERE id = $1 AND is_system = FALSE AND user_id = $2',
+      [id, req.userId]
+    );
+
+    if (eventInfo.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found or cannot be deleted' });
+    }
+
+    const eventName = eventInfo.rows[0].name;
+    const formId = eventInfo.rows[0].form_id;
+
+    // Update all applicants with this event status back to "pending"
+    if (formId) {
+      await pool.query(
+        'UPDATE form_responses SET status = $1 WHERE form_id = $2 AND status = $3',
+        ['pending', formId, eventName]
+      );
+    }
+
+    // Now delete the event
     const result = await pool.query(
       'DELETE FROM events WHERE id = $1 AND is_system = FALSE AND user_id = $2 RETURNING id',
       [id, req.userId]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Event not found or cannot be deleted' });
-    }
 
     res.json({ message: 'Event deleted successfully' });
   } catch (error) {
