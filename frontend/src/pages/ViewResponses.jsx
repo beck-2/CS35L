@@ -72,14 +72,22 @@ function ViewResponses() {
     
     const sorted = [...responses];
     
+    const getStatusPriority = (status) => {
+      if (status === 'accepted') return 1;
+      if (status === 'rejected') return 3;
+      if (status === 'pending' || !status) return 4;
+      return 2; // in-progress stages
+    };
+    
     switch (sortBy) {
       case 'status-accepted':
+        // Sort: accepted -> in-progress -> rejected -> pending
         return sorted.sort((a, b) => {
           const aStatus = a.status || 'pending';
           const bStatus = b.status || 'pending';
-          if (aStatus === 'accepted' && bStatus !== 'accepted') return -1;
-          if (aStatus !== 'accepted' && bStatus === 'accepted') return 1;
-          return 0;
+          const aPriority = getStatusPriority(aStatus);
+          const bPriority = getStatusPriority(bStatus);
+          return aPriority - bPriority;
         });
       case 'status-rejected':
         return sorted.sort((a, b) => {

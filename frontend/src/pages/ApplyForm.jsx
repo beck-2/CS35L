@@ -228,6 +228,49 @@ function ApplyForm() {
           </div>
         );
 
+      case 'gpa':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="text"
+              name={fieldName}
+              required={field.required}
+              placeholder="0.00 - 4.00"
+              pattern={field.validation || "^(?:[0-4]\\.\\d{1,3}|5\\.0{1,3})$"}
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </div>
+        );
+
+      case 'graduation_year':
+        return (
+          <div key={field.id || index} style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
+              {description}
+            </div>
+            <label>
+              {field.label}
+              {field.required && <span style={{ color: 'red' }}> *</span>}
+            </label>
+            <input
+              type="number"
+              name={fieldName}
+              required={field.required}
+              min="2000"
+              max="2100"
+              placeholder="YYYY"
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </div>
+        );
+
       default:
         return null;
     }
