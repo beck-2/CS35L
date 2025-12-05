@@ -984,16 +984,6 @@ function Timeline() {
                   />
                 </label>
               </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={newEventMembersOnly}
-                    onChange={(e) => setNewEventMembersOnly(e.target.checked)}
-                  />
-                  <span>Members only (visible to members only)</span>
-                </label>
-              </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => {
