@@ -13,14 +13,14 @@ function escapeCSVField(field) {
 }
 
 function extractFormQuestions(formDefinition) {
-  if (!formDefinition || !Array.isArray(formDefinition.questions)) {
+  if (!formDefinition || !Array.isArray(formDefinition.fields)) {
     return [];
   }
 
-  return formDefinition.questions.map(q => ({
-    id: q.id,
-    label: q.label || `Question ${q.id}`,
-    type: q.type
+  return formDefinition.fields.map(f => ({
+    id: f.id,
+    label: f.label || f.question || `Question ${f.id}`,
+    type: f.type
   }));
 }
 
@@ -46,32 +46,26 @@ function generateResponsesCSV(form, responses, ratingsMap = {}) {
   const questions = extractFormQuestions(form.definition);
 
   const headers = [
-    'Response ID',
-    'Applicant Name',
-    'Applicant Email',
+    ...questions.map(q => q.label),
     'Submitted At',
     'Average Rating',
-    'Number of Reviews',
-    ...questions.map(q => q.label)
+    'Number of Reviews'
   ];
 
   const rows = responses.map(response => {
     const ratings = ratingsMap[response.id] || { avg_rating: null, review_count: 0 };
 
-    const baseFields = [
-      response.id,
-      response.applicant_name || '',
-      response.applicant_email || '',
+    const answerFields = questions.map(q =>
+      extractAnswer(response.response_data, q.id)
+    );
+
+    const metadataFields = [
       response.submitted_at,
       ratings.avg_rating !== null ? ratings.avg_rating.toFixed(2) : 'N/A',
       ratings.review_count
     ];
 
-    const answerFields = questions.map(q =>
-      extractAnswer(response.response_data, q.id)
-    );
-
-    return [...baseFields, ...answerFields];
+    return [...answerFields, ...metadataFields];
   });
 
   const csvLines = [

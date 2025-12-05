@@ -469,7 +469,12 @@ function Timeline() {
 
   useEffect(() => {
     fetchForms();
-    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    if (selectedFormId) {
+      fetchEvents();
+    }
   }, [selectedFormId]);
 
   const fetchForms = async () => {
