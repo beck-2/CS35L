@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, TrendingUp, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, CheckCircle, XCircle, Clock, BarChart3 } from 'lucide-react';
 
 const Analytics = () => {
   const { formId } = useParams();
@@ -22,7 +22,7 @@ const Analytics = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setFormName(data.title || 'Application');
+        setFormName(data.name || data.title || 'Application');
       }
     } catch (err) {
       console.error('Failed to fetch form name:', err);
@@ -62,16 +62,36 @@ const Analytics = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading analytics...</div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{
+          fontSize: '18px',
+          color: '#4D7298',
+          fontWeight: '500',
+        }}>Loading analytics...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-500">Error: {error}</div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{
+          color: '#e74c3c',
+          fontSize: '18px',
+          fontWeight: '500',
+        }}>Error: {error}</div>
       </div>
     );
   }
@@ -81,100 +101,395 @@ const Analytics = () => {
   const { totalApplicants, stageProgression, finalStatus } = analyticsData;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      padding: '48px 24px',
+    }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '40px' }}>
           <button
-            onClick={() => navigate(`/forms/${formId}/responses`)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+            onClick={() => navigate(`/admin/forms/${formId}/responses`)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              color: '#4D7298',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              padding: '8px 0',
+              marginBottom: '20px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#77A6B6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#4D7298';
+            }}
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} />
             Back to Responses
           </button>
-          <h1 className="text-4xl font-bold text-gray-800">
-            Analytics: {formName}
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Track applicant progression through each stage
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+            <BarChart3 size={40} style={{ color: '#4D7298' }} />
+            <h1 style={{
+              color: '#2d3436',
+              fontSize: '36px',
+              fontWeight: '600',
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}>
+              Analytics Dashboard
+            </h1>
+          </div>
+          <p style={{
+            color: '#636e72',
+            fontSize: '18px',
+            margin: 0,
+            fontWeight: '500',
+          }}>
+            {formName}
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-            <div className="flex items-center gap-3">
-              <Users className="text-blue-500" size={32} />
-              <div>
-                <p className="text-gray-600 text-sm">Total Applicants</p>
-                <p className="text-3xl font-bold text-gray-800">{totalApplicants}</p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '24px',
+          marginBottom: '48px',
+        }}>
+          {/* Total Applicants */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '28px',
+            boxShadow: '0 4px 20px rgba(77, 114, 152, 0.1)',
+            border: '1px solid rgba(77, 114, 152, 0.1)',
+            transition: 'all 0.3s ease',
+            cursor: 'default',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(77, 114, 152, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(77, 114, 152, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #77A6B6 0%, #4D7298 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Users size={28} style={{ color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  color: '#636e72',
+                  fontSize: '14px',
+                  margin: '0 0 8px 0',
+                  fontWeight: '500',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}>Total Applicants</p>
+                <p style={{
+                  fontSize: '40px',
+                  fontWeight: '700',
+                  color: '#2d3436',
+                  margin: 0,
+                  lineHeight: 1,
+                }}>{totalApplicants}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="text-green-500" size={32} />
-              <div>
-                <p className="text-gray-600 text-sm">Accepted</p>
-                <p className="text-3xl font-bold text-green-600">{finalStatus.accepted}</p>
-                <p className="text-xs text-gray-500">
-                  {totalApplicants > 0 ? ((finalStatus.accepted / totalApplicants) * 100).toFixed(1) : 0}%
-                </p>
+          {/* Accepted */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '28px',
+            boxShadow: '0 4px 20px rgba(132, 191, 95, 0.1)',
+            border: '1px solid rgba(132, 191, 95, 0.15)',
+            transition: 'all 0.3s ease',
+            cursor: 'default',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(132, 191, 95, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(132, 191, 95, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #84BF5F 0%, #6ea84a 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <CheckCircle size={28} style={{ color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  color: '#636e72',
+                  fontSize: '14px',
+                  margin: '0 0 8px 0',
+                  fontWeight: '500',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}>Accepted</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <p style={{
+                    fontSize: '40px',
+                    fontWeight: '700',
+                    color: '#84BF5F',
+                    margin: 0,
+                    lineHeight: 1,
+                  }}>{finalStatus.accepted}</p>
+                  <p style={{
+                    fontSize: '16px',
+                    color: '#84BF5F',
+                    fontWeight: '600',
+                    margin: 0,
+                  }}>
+                    {totalApplicants > 0 ? ((finalStatus.accepted / totalApplicants) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">
-            <div className="flex items-center gap-3">
-              <XCircle className="text-red-500" size={32} />
-              <div>
-                <p className="text-gray-600 text-sm">Rejected</p>
-                <p className="text-3xl font-bold text-red-600">{finalStatus.rejected}</p>
-                <p className="text-xs text-gray-500">
-                  {totalApplicants > 0 ? ((finalStatus.rejected / totalApplicants) * 100).toFixed(1) : 0}%
-                </p>
+          {/* Rejected */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '28px',
+            boxShadow: '0 4px 20px rgba(231, 76, 60, 0.1)',
+            border: '1px solid rgba(231, 76, 60, 0.15)',
+            transition: 'all 0.3s ease',
+            cursor: 'default',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(231, 76, 60, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(231, 76, 60, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <XCircle size={28} style={{ color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  color: '#636e72',
+                  fontSize: '14px',
+                  margin: '0 0 8px 0',
+                  fontWeight: '500',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}>Rejected</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <p style={{
+                    fontSize: '40px',
+                    fontWeight: '700',
+                    color: '#e74c3c',
+                    margin: 0,
+                    lineHeight: 1,
+                  }}>{finalStatus.rejected}</p>
+                  <p style={{
+                    fontSize: '16px',
+                    color: '#e74c3c',
+                    fontWeight: '600',
+                    margin: 0,
+                  }}>
+                    {totalApplicants > 0 ? ((finalStatus.rejected / totalApplicants) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
-            <div className="flex items-center gap-3">
-              <Clock className="text-yellow-500" size={32} />
-              <div>
-                <p className="text-gray-600 text-sm">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600">{finalStatus.pending}</p>
-                <p className="text-xs text-gray-500">
-                  {totalApplicants > 0 ? ((finalStatus.pending / totalApplicants) * 100).toFixed(1) : 0}%
-                </p>
+          {/* Pending */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '28px',
+            boxShadow: '0 4px 20px rgba(241, 196, 15, 0.1)',
+            border: '1px solid rgba(241, 196, 15, 0.15)',
+            transition: 'all 0.3s ease',
+            cursor: 'default',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(241, 196, 15, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(241, 196, 15, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #f1c40f 0%, #d4a017 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Clock size={28} style={{ color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  color: '#636e72',
+                  fontSize: '14px',
+                  margin: '0 0 8px 0',
+                  fontWeight: '500',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}>Pending</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <p style={{
+                    fontSize: '40px',
+                    fontWeight: '700',
+                    color: '#f1c40f',
+                    margin: 0,
+                    lineHeight: 1,
+                  }}>{finalStatus.pending}</p>
+                  <p style={{
+                    fontSize: '16px',
+                    color: '#f1c40f',
+                    fontWeight: '600',
+                    margin: 0,
+                  }}>
+                    {totalApplicants > 0 ? ((finalStatus.pending / totalApplicants) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Stage Progression Funnel */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="text-purple-600" size={28} />
-            <h2 className="text-2xl font-bold text-gray-800">Stage Progression</h2>
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '40px',
+          boxShadow: '0 8px 32px rgba(77, 114, 152, 0.12)',
+          border: '1px solid rgba(77, 114, 152, 0.1)',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            marginBottom: '36px',
+            paddingBottom: '24px',
+            borderBottom: '2px solid #f0f0f0',
+          }}>
+            <TrendingUp size={32} style={{ color: '#4D7298' }} />
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '600',
+              color: '#2d3436',
+              margin: 0,
+              letterSpacing: '-0.01em',
+            }}>Stage Progression</h2>
           </div>
 
           {stageProgression.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No stage data available yet</p>
+            <div style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: '#636e72',
+              fontSize: '16px',
+            }}>
+              <Users size={48} style={{ color: '#dfe6e9', marginBottom: '16px' }} />
+              <p style={{ margin: 0 }}>No stage data available yet</p>
+            </div>
           ) : (
-            <div className="space-y-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               {/* Starting point - Total Applicants */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">Application Submitted</span>
-                  <span className="text-sm font-bold text-gray-800">{totalApplicants} applicants</span>
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '12px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#4D7298',
+                    }}></div>
+                    <span style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#2d3436',
+                    }}>Application Submitted</span>
+                  </div>
+                  <span style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#4D7298',
+                  }}>{totalApplicants} applicants</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-10 relative overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full flex items-center justify-end pr-4 transition-all duration-500"
-                    style={{ width: '100%' }}
-                  >
-                    <span className="text-white font-semibold text-sm">100%</span>
+                <div style={{
+                  width: '100%',
+                  height: '48px',
+                  background: 'linear-gradient(90deg, #e8f4f8 0%, #f0f0f0 100%)',
+                  borderRadius: '12px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)',
+                }}>
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #77A6B6 0%, #4D7298 100%)',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    padding: '0 20px',
+                    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}>
+                    <span style={{
+                      color: 'white',
+                      fontWeight: '700',
+                      fontSize: '16px',
+                    }}>100%</span>
                   </div>
                 </div>
               </div>
@@ -183,40 +498,115 @@ const Analytics = () => {
               {stageProgression.map((stage, index) => {
                 const previousCount = index === 0 ? totalApplicants : stageProgression[index - 1].applicantsReached;
                 const dropoffRate = getDropoffRate(stage.applicantsReached, previousCount);
+                const widthPercent = (stage.applicantsReached / totalApplicants * 100);
                 
                 return (
-                  <div key={stage.stage} className="relative">
-                    {/* Connecting line */}
-                    <div className="absolute left-0 -top-3 w-1 h-3 bg-gradient-to-b from-gray-300 to-transparent"></div>
+                  <div key={stage.stage} style={{ position: 'relative' }}>
+                    {/* Connecting line with arrow */}
+                    <div style={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: '-24px',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}>
+                      <div style={{
+                        width: '2px',
+                        height: '16px',
+                        background: 'linear-gradient(180deg, #b2bec3 0%, transparent 100%)',
+                      }}></div>
+                      <div style={{
+                        width: '0',
+                        height: '0',
+                        borderLeft: '6px solid transparent',
+                        borderRight: '6px solid transparent',
+                        borderTop: '8px solid #b2bec3',
+                      }}></div>
+                    </div>
                     
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold text-gray-700">{stage.stage}</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '12px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#9DC3C2',
+                        }}></div>
+                        <span style={{
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#2d3436',
+                        }}>{stage.stage}</span>
                         {dropoffRate > 0 && (
-                          <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">
+                          <span style={{
+                            fontSize: '12px',
+                            padding: '4px 12px',
+                            background: 'linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%)',
+                            color: '#c0392b',
+                            borderRadius: '20px',
+                            fontWeight: '600',
+                            letterSpacing: '0.3px',
+                          }}>
                             -{dropoffRate}% dropoff
                           </span>
                         )}
                       </div>
-                      <div className="text-right">
-                        <span className="text-sm font-bold text-gray-800">
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#9DC3C2',
+                        }}>
                           {stage.applicantsReached} reached
                         </span>
                         {stage.currentlyAt > 0 && (
-                          <span className="text-xs text-gray-500 ml-2">
-                            ({stage.currentlyAt} currently here)
+                          <span style={{
+                            fontSize: '13px',
+                            color: '#636e72',
+                            marginLeft: '8px',
+                            fontWeight: '500',
+                          }}>
+                            ({stage.currentlyAt} currently)
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    <div className="w-full bg-gray-200 rounded-full h-10 relative overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full flex items-center justify-end pr-4 transition-all duration-500"
-                        style={{ width: getBarWidth(stage.applicantsReached, totalApplicants) }}
-                      >
+                    <div style={{
+                      width: '100%',
+                      height: '48px',
+                      background: 'linear-gradient(90deg, #e8f4f8 0%, #f0f0f0 100%)',
+                      borderRadius: '12px',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)',
+                    }}>
+                      <div style={{
+                        width: getBarWidth(stage.applicantsReached, totalApplicants),
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #9DC3C2 0%, #77A6B6 100%)',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        padding: '0 20px',
+                        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                        minWidth: stage.applicantsReached > 0 ? '80px' : '0',
+                      }}>
                         {stage.applicantsReached > 0 && (
-                          <span className="text-white font-semibold text-sm">{stage.percentage}%</span>
+                          <span style={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '16px',
+                          }}>{stage.percentage}%</span>
                         )}
                       </div>
                     </div>
@@ -228,24 +618,79 @@ const Analytics = () => {
 
           {/* Conversion Rate Summary */}
           {stageProgression.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Conversion Insights</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-green-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Overall Acceptance Rate</p>
-                  <p className="text-2xl font-bold text-green-600">
+            <div style={{
+              marginTop: '48px',
+              paddingTop: '32px',
+              borderTop: '2px solid #f0f0f0',
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#2d3436',
+                marginBottom: '24px',
+              }}>Conversion Insights</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '24px',
+              }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #e8f8f5 0%, #d5f4e6 100%)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  border: '1px solid rgba(132, 191, 95, 0.2)',
+                }}>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#636e72',
+                    margin: '0 0 12px 0',
+                    fontWeight: '500',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}>Overall Acceptance Rate</p>
+                  <p style={{
+                    fontSize: '36px',
+                    fontWeight: '700',
+                    color: '#84BF5F',
+                    margin: '0 0 8px 0',
+                  }}>
                     {totalApplicants > 0 ? ((finalStatus.accepted / totalApplicants) * 100).toFixed(1) : 0}%
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#636e72',
+                    margin: 0,
+                  }}>
                     {finalStatus.accepted} out of {totalApplicants} applicants
                   </p>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">In-Process Applicants</p>
-                  <p className="text-2xl font-bold text-purple-600">
+                <div style={{
+                  background: 'linear-gradient(135deg, #e8eaf6 0%, #d1d9ff 100%)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  border: '1px solid rgba(77, 114, 152, 0.2)',
+                }}>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#636e72',
+                    margin: '0 0 12px 0',
+                    fontWeight: '500',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}>In-Process Applicants</p>
+                  <p style={{
+                    fontSize: '36px',
+                    fontWeight: '700',
+                    color: '#4D7298',
+                    margin: '0 0 8px 0',
+                  }}>
                     {totalApplicants - finalStatus.accepted - finalStatus.rejected - finalStatus.pending}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#636e72',
+                    margin: 0,
+                  }}>
                     Currently in interview stages
                   </p>
                 </div>
