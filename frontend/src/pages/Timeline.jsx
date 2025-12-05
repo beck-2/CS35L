@@ -499,49 +499,9 @@ function Timeline() {
   };
 
   const handleDragEnd = async (dragEvent) => {
-    const { active, over } = dragEvent;
-
-    if (!over || active.id === over.id) return;
-
-    const acceptanceEvent = events.find(e => e.name === 'Acceptance');
-    const nonAcceptanceEvents = events.filter(e => e.name !== 'Acceptance');
-    const sortedEvents = [...nonAcceptanceEvents, acceptanceEvent].filter(Boolean);
-
-    const oldIndex = sortedEvents.findIndex(e => e.id === active.id);
-    const newIndex = sortedEvents.findIndex(e => e.id === over.id);
-
-    const movedEvent = sortedEvents[oldIndex];
-
-    if (movedEvent.name === 'Acceptance') {
-      alert('Acceptance event cannot be moved');
-      return;
-    }
-
-    const targetEvent = sortedEvents[newIndex];
-    if (targetEvent.name === 'Acceptance') {
-      alert('Events cannot be placed after Acceptance');
-      return;
-    }
-
-    const newNonAcceptance = arrayMove(nonAcceptanceEvents, oldIndex, newIndex);
-    const finalEvents = [...newNonAcceptance, acceptanceEvent].filter(Boolean);
-    setEvents(finalEvents);
-
-    const reorderedEvents = finalEvents.map((e, index) => ({
-      id: e.id,
-      position: index + 1,
-    }));
-
-    try {
-      await fetch('/api/events/reorder', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events: reorderedEvents }),
-      });
-    } catch (error) {
-      console.error('Error reordering events:', error);
-      fetchEvents();
-    }
+    // Events are now automatically sorted by date, so dragging is disabled
+    alert('Events are automatically sorted by date. To change the order, edit the event date.');
+    return;
   };
 
   const handleAddEvent = async () => {
@@ -702,9 +662,18 @@ function Timeline() {
     );
   }
 
+  // Sort events by date (earliest to latest), with Acceptance always at the end
   const acceptanceEvent = events.find(e => e.name === 'Acceptance');
   const nonAcceptanceEvents = events.filter(e => e.name !== 'Acceptance');
-  const sortedEvents = [...nonAcceptanceEvents, acceptanceEvent].filter(Boolean);
+  
+  // Sort non-acceptance events by date
+  const sortedNonAcceptanceEvents = [...nonAcceptanceEvents].sort((a, b) => {
+    const dateA = new Date(a.event_date);
+    const dateB = new Date(b.event_date);
+    return dateA - dateB; // Earlier dates first
+  });
+  
+  const sortedEvents = [...sortedNonAcceptanceEvents, acceptanceEvent].filter(Boolean);
 
   return (
     <div style={{ 
@@ -741,7 +710,7 @@ function Timeline() {
               Event timeline
             </h1>
             <p style={{ color: '#636e72', fontSize: '16px', margin: 0 }}>
-              Add events and share them with your team
+              Events are automatically sorted by date (earliest to latest)
             </p>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
