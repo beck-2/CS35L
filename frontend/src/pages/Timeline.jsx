@@ -433,6 +433,8 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
 function Timeline() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
+  const [forms, setForms] = useState([]);
+  const [selectedFormId, setSelectedFormId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -464,12 +466,27 @@ function Timeline() {
   );
 
   useEffect(() => {
+    fetchForms();
     fetchEvents();
-  }, []);
+  }, [selectedFormId]);
+
+  const fetchForms = async () => {
+    try {
+      const response = await fetch('/api/forms');
+      const data = await response.json();
+      setForms(data);
+      if (data.length > 0 && !selectedFormId) {
+        setSelectedFormId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching forms:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/events');
+      const url = selectedFormId ? `/api/events?formId=${selectedFormId}` : '/api/events';
+      const response = await fetch(url);
       const data = await response.json();
       setEvents(data);
       setLoading(false);
@@ -545,6 +562,7 @@ function Timeline() {
           notes: newEventNotes || null,
           members_only: newEventMembersOnly,
           location: newEventLocation || null,
+          form_id: selectedFormId,
         }),
       });
 
@@ -724,30 +742,55 @@ function Timeline() {
               Add events and share them with your team
             </p>
           </div>
-          <button
-            onClick={() => {
-              setShowAddModal(true);
-              setEditingEvent(null);
-              setNewEventName('');
-              setNewEventDate('');
-              setNewEventNotes('');
-              setNewEventMembersOnly(false);
-              setNewEventLocation('');
-            }}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#4D7298',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '14px',
-              height: 'fit-content',
-            }}
-          >
-            Add Event
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <select
+              value={selectedFormId || ''}
+              onChange={(e) => setSelectedFormId(e.target.value ? parseInt(e.target.value) : null)}
+              style={{
+                padding: '10px 16px',
+                backgroundColor: 'white',
+                color: '#2d3436',
+                border: '2px solid #77A6B6',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
+                height: 'fit-content',
+                minWidth: '200px',
+              }}
+            >
+              <option value="">All Timelines</option>
+              {forms.map(form => (
+                <option key={form.id} value={form.id}>
+                  {form.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                setShowAddModal(true);
+                setEditingEvent(null);
+                setNewEventName('');
+                setNewEventDate('');
+                setNewEventNotes('');
+                setNewEventMembersOnly(false);
+                setNewEventLocation('');
+              }}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#4D7298',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
+                height: 'fit-content',
+              }}
+            >
+              Add Event
+            </button>
+          </div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>

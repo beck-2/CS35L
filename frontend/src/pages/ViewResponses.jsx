@@ -40,7 +40,7 @@ function ViewResponses() {
     Promise.all([
       fetch(`/api/forms/${id}`).then(res => res.json()),
       fetch(`/api/forms/${id}/responses`).then(res => res.json()),
-      fetch(`/api/events`).then(res => res.json())
+      fetch(`/api/events?formId=${id}`).then(res => res.json())
     ])
       .then(([formData, responsesData, eventsData]) => {
         setForm(formData);
