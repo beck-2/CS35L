@@ -64,7 +64,7 @@ const Analytics = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        backgroundColor: '#F5FCEE',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -82,7 +82,7 @@ const Analytics = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        backgroundColor: '#F5FCEE',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -103,7 +103,7 @@ const Analytics = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      backgroundColor: '#F5FCEE',
       padding: '48px 24px',
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
