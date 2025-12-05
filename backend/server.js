@@ -634,38 +634,42 @@ app.get('/api/forms/:id/analytics', async (req, res) => {
       [formId]
     );
 
-    // Get all unique statuses that applicants have reached (from status_history)
-    const historyResult = await pool.query(
-      `SELECT DISTINCT sh.new_status, COUNT(DISTINCT sh.response_id) as reached_count
-       FROM status_history sh
-       JOIN form_responses fr ON sh.response_id = fr.id
-       WHERE fr.form_id = $1
-       GROUP BY sh.new_status`,
-      [formId]
-    );
-
-    // Get timeline events for ordering
+    // Get timeline events for this specific form to establish stage order
     const eventsResult = await pool.query(
-      'SELECT name, position FROM events WHERE user_id = $1 ORDER BY position ASC',
-      [req.userId]
+      'SELECT name, position FROM events WHERE user_id = $1 AND form_id = $2 ORDER BY position ASC',
+      [req.userId, formId]
     );
 
     // Build stage progression data
-    const stageProgression = eventsResult.rows
-      .filter(e => e.name !== 'Application') // Exclude Application stage
-      .map(event => {
-        const historyEntry = historyResult.rows.find(h => h.new_status === event.name);
-        const currentEntry = statusResult.rows.find(s => s.status === event.name);
-        
-        return {
-          stage: event.name,
-          applicantsReached: historyEntry ? parseInt(historyEntry.reached_count) : 0,
-          currentlyAt: currentEntry ? parseInt(currentEntry.count) : 0,
-          percentage: totalApplicants > 0 
-            ? ((historyEntry ? parseInt(historyEntry.reached_count) : 0) / totalApplicants * 100).toFixed(1)
-            : 0
-        };
+    // For each stage, count applicants who are currently at that stage OR at any later stage
+    const stageProgression = [];
+    const stages = eventsResult.rows.filter(e => e.name !== 'Application'); // Exclude Application stage
+    
+    for (let i = 0; i < stages.length; i++) {
+      const currentStage = stages[i];
+      // Get all stages at this position or later
+      const currentAndLaterStages = stages.slice(i).map(s => s.name);
+      
+      // Count applicants currently at this stage or beyond
+      const reachedResult = await pool.query(
+        `SELECT COUNT(DISTINCT id) as reached_count
+         FROM form_responses
+         WHERE form_id = $1 AND status = ANY($2::text[])`,
+        [formId, currentAndLaterStages]
+      );
+      
+      const currentEntry = statusResult.rows.find(s => s.status === currentStage.name);
+      const reachedCount = parseInt(reachedResult.rows[0].reached_count);
+      
+      stageProgression.push({
+        stage: currentStage.name,
+        applicantsReached: reachedCount,
+        currentlyAt: currentEntry ? parseInt(currentEntry.count) : 0,
+        percentage: totalApplicants > 0 
+          ? (reachedCount / totalApplicants * 100).toFixed(1)
+          : 0
       });
+    }
 
     // Add special tracking for accepted and rejected
     const acceptedCount = statusResult.rows.find(s => s.status === 'accepted');

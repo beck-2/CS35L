@@ -458,6 +458,14 @@ const Analytics = () => {
                       fontWeight: '600',
                       color: '#2d3436',
                     }}>Application Submitted</span>
+                    <span style={{
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      color: '#77A6B6',
+                      marginLeft: '12px',
+                    }}>
+                      100%
+                    </span>
                   </div>
                   <span style={{
                     fontSize: '18px',
@@ -471,7 +479,6 @@ const Analytics = () => {
                   background: 'linear-gradient(90deg, #e8f4f8 0%, #f0f0f0 100%)',
                   borderRadius: '12px',
                   position: 'relative',
-                  overflow: 'hidden',
                   boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)',
                 }}>
                   <div style={{
@@ -479,17 +486,8 @@ const Analytics = () => {
                     height: '100%',
                     background: 'linear-gradient(90deg, #77A6B6 0%, #4D7298 100%)',
                     borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    padding: '0 20px',
                     transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}>
-                    <span style={{
-                      color: 'white',
-                      fontWeight: '700',
-                      fontSize: '16px',
-                    }}>100%</span>
                   </div>
                 </div>
               </div>
@@ -545,6 +543,14 @@ const Analytics = () => {
                           fontWeight: '600',
                           color: '#2d3436',
                         }}>{stage.stage}</span>
+                        <span style={{
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          color: '#77A6B6',
+                          marginLeft: '12px',
+                        }}>
+                          {stage.percentage}%
+                        </span>
                         {dropoffRate > 0 && (
                           <span style={{
                             fontSize: '12px',
@@ -586,7 +592,6 @@ const Analytics = () => {
                       background: 'linear-gradient(90deg, #e8f4f8 0%, #f0f0f0 100%)',
                       borderRadius: '12px',
                       position: 'relative',
-                      overflow: 'hidden',
                       boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)',
                     }}>
                       <div style={{
@@ -594,20 +599,8 @@ const Analytics = () => {
                         height: '100%',
                         background: 'linear-gradient(90deg, #9DC3C2 0%, #77A6B6 100%)',
                         borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'flex-end',
-                        padding: '0 20px',
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                        minWidth: stage.applicantsReached > 0 ? '80px' : '0',
                       }}>
-                        {stage.applicantsReached > 0 && (
-                          <span style={{
-                            color: 'white',
-                            fontWeight: '700',
-                            fontSize: '16px',
-                          }}>{stage.percentage}%</span>
-                        )}
                       </div>
                     </div>
                   </div>
