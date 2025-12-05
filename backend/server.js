@@ -570,10 +570,20 @@ app.get('/api/events', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
-    const result = await pool.query(
-      'SELECT * FROM events WHERE user_id = $1 ORDER BY position ASC, id ASC',
-      [req.userId]
-    );
+    const { formId } = req.query;
+    
+    let query, params;
+    if (formId) {
+      // Get events for specific form
+      query = 'SELECT * FROM events WHERE user_id = $1 AND form_id = $2 ORDER BY position ASC, id ASC';
+      params = [req.userId, formId];
+    } else {
+      // Get all events for user (or events with no form_id)
+      query = 'SELECT * FROM events WHERE user_id = $1 ORDER BY position ASC, id ASC';
+      params = [req.userId];
+    }
+    
+    const result = await pool.query(query, params);
     
     const acceptanceEvent = result.rows.find(e => e.name === 'Acceptance');
     const nonAcceptanceEvents = result.rows.filter(e => e.name !== 'Acceptance');
@@ -595,16 +605,16 @@ app.post('/api/events', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
-    const { name, event_date, position, notes, members_only, location } = req.body;
+    const { name, event_date, position, notes, members_only, location, form_id } = req.body;
     if (!name || !event_date) {
       return res.status(400).json({ error: 'name and event_date are required' });
     }
 
     const result = await pool.query(
-      `INSERT INTO events (name, event_date, position, is_system, notes, members_only, location, user_id)
-       VALUES ($1, $2, $3, FALSE, $4, $5, $6, $7)
+      `INSERT INTO events (name, event_date, position, is_system, notes, members_only, location, user_id, form_id)
+       VALUES ($1, $2, $3, FALSE, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [name, event_date, position || 1, notes || null, members_only || false, location || null, req.userId]
+      [name, event_date, position || 1, notes || null, members_only || false, location || null, req.userId, form_id || null]
     );
     res.json(result.rows[0]);
   } catch (error) {
