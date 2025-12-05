@@ -657,12 +657,35 @@ function Timeline() {
   if (loading) {
     return (
       <div style={{ 
-        padding: '40px 20px', 
-        paddingTop: '100px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: '#F5FCEE',
         minHeight: '100vh',
       }}>
-        <div>Loading timeline...</div>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '40px 60px',
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          textAlign: 'center',
+          maxWidth: '500px',
+        }}>
+          <div style={{
+            color: '#2d3436',
+            fontSize: '20px',
+            fontWeight: '600',
+            marginBottom: '8px',
+          }}>
+            No timelines
+          </div>
+          <div style={{
+            color: '#636e72',
+            fontSize: '16px',
+          }}>
+            Please create a form first
+          </div>
+        </div>
       </div>
     );
   }
