@@ -65,7 +65,9 @@ function SortableEvent({ event, onDelete, onEdit, onFormClick, index, total, onE
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    // Parse date as local date to avoid timezone issues
+    const [year, month, day] = dateString.split('T')[0].split('-');
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
@@ -923,7 +925,8 @@ function Timeline() {
                           onEdit={(e) => {
                             setEditingEvent(e);
                             setNewEventName(e.name);
-                            const dateStr = e.event_date ? new Date(e.event_date).toISOString().split('T')[0] : '';
+                            // Extract date string directly to avoid timezone issues
+                            const dateStr = e.event_date ? e.event_date.split('T')[0] : '';
                             setNewEventDate(dateStr);
                             setNewEventNotes(e.notes || '');
                             setNewEventMembersOnly(e.members_only || false);
