@@ -17,7 +17,7 @@ const Analytics = () => {
 
   const fetchFormName = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/forms/${formId}`, {
+      const response = await fetch(`/api/forms/${formId}`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -32,7 +32,7 @@ const Analytics = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5001/api/forms/${formId}/analytics`, {
+      const response = await fetch(`/api/forms/${formId}/analytics`, {
         credentials: 'include'
       });
 
