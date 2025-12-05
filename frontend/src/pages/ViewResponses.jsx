@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft, Check, X } from 'lucide-react';
 import RatingForm from '../components/RatingForm';
 import RatingsList from '../components/RatingsList';
 
@@ -19,6 +19,10 @@ function ViewResponses() {
   const [ratings, setRatings] = useState({});
   const [averages, setAverages] = useState({});
   const [isSubmitting, setIsSubmitting] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState({});
+  const [timelineEvents, setTimelineEvents] = useState([]);
+  const [showStageDropdown, setShowStageDropdown] = useState({});
+  const [sortBy, setSortBy] = useState('none'); // 'none' | 'status-accepted' | 'status-rejected' | 'status-pending' | 'status-stages'
 
   // Helper function to get field label from field ID
   const getFieldLabel = (fieldId) => {
@@ -35,11 +39,15 @@ function ViewResponses() {
   useEffect(() => {
     Promise.all([
       fetch(`/api/forms/${id}`).then(res => res.json()),
-      fetch(`/api/forms/${id}/responses`).then(res => res.json())
+      fetch(`/api/forms/${id}/responses`).then(res => res.json()),
+      fetch(`/api/events`).then(res => res.json())
     ])
-      .then(([formData, responsesData]) => {
+      .then(([formData, responsesData, eventsData]) => {
         setForm(formData);
         setResponses(responsesData);
+        // Filter out Application and Acceptance events, keep everything in between
+        const stages = eventsData.filter(e => e.name !== 'Application' && e.name !== 'Acceptance');
+        setTimelineEvents(stages);
         setLoading(false);
       })
       .catch(err => {
@@ -47,6 +55,55 @@ function ViewResponses() {
         setLoading(false);
       });
   }, [id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowStageDropdown({});
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Sort responses based on status
+  const getSortedResponses = () => {
+    if (sortBy === 'none' || !responses || responses.length === 0) return responses;
+    
+    const sorted = [...responses];
+    
+    switch (sortBy) {
+      case 'status-accepted':
+        return sorted.sort((a, b) => {
+          if (a.status === 'accepted' && b.status !== 'accepted') return -1;
+          if (a.status !== 'accepted' && b.status === 'accepted') return 1;
+          return 0;
+        });
+      case 'status-rejected':
+        return sorted.sort((a, b) => {
+          if (a.status === 'rejected' && b.status !== 'rejected') return -1;
+          if (a.status !== 'rejected' && b.status === 'rejected') return 1;
+          return 0;
+        });
+      case 'status-pending':
+        return sorted.sort((a, b) => {
+          if (a.status === 'pending' && b.status !== 'pending') return -1;
+          if (a.status !== 'pending' && b.status === 'pending') return 1;
+          return 0;
+        });
+      case 'status-stages':
+        // Sort by in-progress stages (anything that's not accepted/rejected/pending)
+        return sorted.sort((a, b) => {
+          const aIsStage = a.status !== 'accepted' && a.status !== 'rejected' && a.status !== 'pending';
+          const bIsStage = b.status !== 'accepted' && b.status !== 'rejected' && b.status !== 'pending';
+          if (aIsStage && !bIsStage) return -1;
+          if (!aIsStage && bIsStage) return 1;
+          return 0;
+        });
+      default:
+        return sorted;
+    }
+  };
 
   const toggleResponse = async (responseId) => {
     const wasExpanded = expandedResponses[responseId];
@@ -101,6 +158,37 @@ function ViewResponses() {
       return false;
     } finally {
       setIsSubmitting(prev => ({ ...prev, [responseId]: false }));
+    }
+  };
+
+  const updateStatus = async (responseId, newStatus) => {
+    setUpdatingStatus(prev => ({ ...prev, [responseId]: true }));
+
+    try {
+      const response = await fetch(`/api/responses/${responseId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      const updatedResponse = await response.json();
+      
+      // Update local state
+      setResponses(prev => 
+        prev.map(r => r.id === responseId ? { ...r, status: updatedResponse.status } : r)
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
+      return false;
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [responseId]: false }));
     }
   };
 
@@ -303,7 +391,50 @@ function ViewResponses() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {responses.map(response => {
+            {/* Sort Dropdown */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              marginBottom: '8px'
+            }}>
+              <label style={{ 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#2d3436' 
+              }}>
+                Sort by:
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: '1px solid #dee2e6',
+                  backgroundColor: 'white',
+                  color: '#2d3436',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#4D7298';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#dee2e6';
+                }}
+              >
+                <option value="none">Default (Newest First)</option>
+                <option value="status-accepted">Accepted First</option>
+                <option value="status-rejected">Rejected First</option>
+                <option value="status-pending">Pending First</option>
+                <option value="status-stages">In Progress First</option>
+              </select>
+            </div>
+
+            {getSortedResponses().map(response => {
               const data = typeof response.response_data === 'string' 
                 ? JSON.parse(response.response_data) 
                 : response.response_data;
@@ -368,23 +499,46 @@ function ViewResponses() {
                         </div>
                       </div>
                       
-                      {/* Submission Date */}
-                      <span style={{ 
-                        fontSize: '13px', 
-                        color: '#a3a3a3',
-                        backgroundColor: '#F5FCEE',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        fontWeight: '500',
-                      }}>
-                        {new Date(response.submitted_at).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Status Badge */}
+                        <span style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '600',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 
+                            response.status === 'accepted' ? '#d4edda' : 
+                            response.status === 'rejected' ? '#f8d7da' : 
+                            response.status === 'pending' ? '#e2e8f0' :
+                            '#fff3cd', // Yellow for in-progress stages
+                          color: 
+                            response.status === 'accepted' ? '#155724' : 
+                            response.status === 'rejected' ? '#721c24' : 
+                            response.status === 'pending' ? '#475569' :
+                            '#856404', // Dark yellow for in-progress stages
+                          textTransform: 'capitalize',
+                        }}>
+                          {response.status || 'pending'}
+                        </span>
+
+                        {/* Submission Date */}
+                        <span style={{ 
+                          fontSize: '13px', 
+                          color: '#a3a3a3',
+                          backgroundColor: '#F5FCEE',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontWeight: '500',
+                        }}>
+                          {new Date(response.submitted_at).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Preview of first 2 questions when collapsed */}
@@ -585,6 +739,217 @@ function ViewResponses() {
                         paddingTop: '24px',
                         borderTop: '2px solid #e5e5e5',
                       }}>
+                        {/* Accept/Reject Buttons */}
+                        <div style={{ 
+                          marginBottom: '24px',
+                          display: 'flex',
+                          gap: '12px',
+                          alignItems: 'center',
+                        }}>
+                          <h3 style={{ 
+                            margin: 0,
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#2d3436',
+                            marginRight: 'auto',
+                          }}>
+                            Application Status
+                          </h3>
+                          
+                          {/* Advance Stage Dropdown */}
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowStageDropdown(prev => ({
+                                  ...prev,
+                                  [response.id]: !prev[response.id]
+                                }));
+                              }}
+                              disabled={updatingStatus[response.id] || response.status === 'rejected' || response.status === 'accepted'}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                backgroundColor: response.status === 'rejected' || response.status === 'accepted' ? '#e9ecef' : '#28a745',
+                                color: response.status === 'rejected' || response.status === 'accepted' ? '#6c757d' : 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: (response.status === 'rejected' || response.status === 'accepted' || updatingStatus[response.id]) ? 'not-allowed' : 'pointer',
+                                opacity: updatingStatus[response.id] ? 0.6 : 1,
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (response.status !== 'rejected' && response.status !== 'accepted' && !updatingStatus[response.id]) {
+                                  e.currentTarget.style.backgroundColor = '#218838';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (response.status !== 'rejected' && response.status !== 'accepted') {
+                                  e.currentTarget.style.backgroundColor = '#28a745';
+                                }
+                              }}
+                            >
+                              <Check size={16} />
+                              Advance Stage
+                              <ChevronDown size={16} />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showStageDropdown[response.id] && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: 0,
+                                  marginTop: '4px',
+                                  backgroundColor: 'white',
+                                  border: '1px solid #dee2e6',
+                                  borderRadius: '8px',
+                                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                  minWidth: '200px',
+                                  zIndex: 1000,
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                {timelineEvents.map((event, idx) => (
+                                  <button
+                                    key={event.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateStatus(response.id, event.name);
+                                      setShowStageDropdown(prev => ({
+                                        ...prev,
+                                        [response.id]: false
+                                      }));
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      padding: '12px 16px',
+                                      border: 'none',
+                                      borderBottom: idx < timelineEvents.length ? '1px solid #f0f0f0' : 'none',
+                                      backgroundColor: 'white',
+                                      textAlign: 'left',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      color: '#2d3436',
+                                      transition: 'background-color 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'white';
+                                    }}
+                                  >
+                                    {event.name}
+                                  </button>
+                                ))}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateStatus(response.id, 'accepted');
+                                    setShowStageDropdown(prev => ({
+                                      ...prev,
+                                      [response.id]: false
+                                    }));
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    backgroundColor: '#d4edda',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    color: '#155724',
+                                    fontWeight: '600',
+                                    transition: 'background-color 0.2s ease',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#c3e6cb';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#d4edda';
+                                  }}
+                                >
+                                  ✓ Accept (Final)
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateStatus(response.id, 'rejected');
+                            }}
+                            disabled={updatingStatus[response.id] || response.status === 'rejected'}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '10px 20px',
+                              backgroundColor: response.status === 'rejected' ? '#f8d7da' : '#dc3545',
+                              color: response.status === 'rejected' ? '#721c24' : 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: response.status === 'rejected' || updatingStatus[response.id] ? 'not-allowed' : 'pointer',
+                              opacity: updatingStatus[response.id] ? 0.6 : 1,
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (response.status !== 'rejected' && !updatingStatus[response.id]) {
+                                e.currentTarget.style.backgroundColor = '#c82333';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (response.status !== 'rejected') {
+                                e.currentTarget.style.backgroundColor = '#dc3545';
+                              }
+                            }}
+                          >
+                            <X size={16} />
+                            {response.status === 'rejected' ? 'Rejected' : 'Reject'}
+                          </button>
+
+                          {response.status !== 'pending' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateStatus(response.id, 'pending');
+                              }}
+                              disabled={updatingStatus[response.id]}
+                              style={{
+                                padding: '10px 16px',
+                                backgroundColor: 'white',
+                                color: '#4D7298',
+                                border: '1px solid #4D7298',
+                                borderRadius: '8px',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                cursor: updatingStatus[response.id] ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!updatingStatus[response.id]) {
+                                  e.currentTarget.style.backgroundColor = '#F5FCEE';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }}
+                            >
+                              Reset to Pending
+                            </button>
+                          )}
+                        </div>
+
                         <RatingsList
                           ratings={ratings[response.id]}
                           average={averages[response.id]}
