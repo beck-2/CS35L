@@ -730,7 +730,6 @@ function Timeline() {
                 minWidth: '200px',
               }}
             >
-              <option value="">All Timelines</option>
               {forms.map(form => (
                 <option key={form.id} value={form.id}>
                   {form.name}
