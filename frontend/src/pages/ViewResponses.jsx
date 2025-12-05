@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft, Check, X, BarChart3 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft, Check, X, BarChart3, Search } from 'lucide-react';
 import RatingForm from '../components/RatingForm';
 import RatingsList from '../components/RatingsList';
 
@@ -23,6 +23,7 @@ function ViewResponses() {
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [showStageDropdown, setShowStageDropdown] = useState({});
   const [sortBy, setSortBy] = useState('none'); // 'none' | 'status-accepted' | 'status-rejected' | 'status-pending' | 'status-stages'
+  const [searchQuery, setSearchQuery] = useState(''); // Search query state
 
   // Helper function to get field label from field ID
   const getFieldLabel = (fieldId) => {
@@ -65,6 +66,43 @@ function ViewResponses() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  // Filter responses based on search query
+  const getFilteredResponses = (responsesToFilter) => {
+    if (!searchQuery.trim()) return responsesToFilter;
+
+    const query = searchQuery.toLowerCase().trim();
+    
+    return responsesToFilter.filter(response => {
+      try {
+        // Parse response data
+        const data = typeof response.response_data === 'string' 
+          ? JSON.parse(response.response_data) 
+          : response.response_data;
+
+        // Search through all field values
+        if (data && typeof data === 'object') {
+          const allValues = Object.values(data).join(' ').toLowerCase();
+          if (allValues.includes(query)) return true;
+        }
+
+        // Also search in applicant_name if it exists
+        if (response.applicant_name && response.applicant_name.toLowerCase().includes(query)) {
+          return true;
+        }
+
+        // Search in status
+        if (response.status && response.status.toLowerCase().includes(query)) {
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        console.error('Error filtering response:', error);
+        return false;
+      }
+    });
+  };
 
   // Sort responses based on status
   const getSortedResponses = () => {
@@ -435,6 +473,80 @@ function ViewResponses() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Search Bar */}
+            <div style={{ 
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+              border: '1px solid #f5f5f4',
+              padding: '16px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Search size={20} color="#737373" />
+                <input
+                  type="text"
+                  placeholder="Search responses by name, email, status, or any field..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    fontSize: '15px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '8px',
+                    backgroundColor: '#fafafa',
+                    color: '#0a0a0a',
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#9DC3C2';
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#e5e5e5';
+                    e.currentTarget.style.backgroundColor = '#fafafa';
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '13px',
+                      color: '#737373',
+                      backgroundColor: 'transparent',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f5f5f4';
+                      e.currentTarget.style.borderColor = '#d4d4d4';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.borderColor = '#e5e5e5';
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {searchQuery && (
+                <p style={{ 
+                  marginTop: '12px', 
+                  marginBottom: '0',
+                  fontSize: '13px', 
+                  color: '#737373',
+                }}>
+                  Showing {getFilteredResponses(getSortedResponses()).length} of {responses.length} responses
+                </p>
+              )}
+            </div>
+
             {/* Sort Dropdown */}
             <div style={{ 
               display: 'flex', 
@@ -478,7 +590,21 @@ function ViewResponses() {
               </select>
             </div>
 
-            {getSortedResponses().map(response => {
+            {getFilteredResponses(getSortedResponses()).length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '60px 20px',
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+              }}>
+                <Search size={48} color="#d4d4d4" style={{ marginBottom: '16px' }} />
+                <p style={{ color: '#737373', fontSize: '18px', marginBottom: '8px' }}>No results found</p>
+                <p style={{ color: '#a3a3a3', fontSize: '14px' }}>Try adjusting your search query.</p>
+              </div>
+            ) : null}
+
+            {getFilteredResponses(getSortedResponses()).map(response => {
               const data = typeof response.response_data === 'string' 
                 ? JSON.parse(response.response_data) 
                 : response.response_data;
