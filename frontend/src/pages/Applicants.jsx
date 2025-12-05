@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Download, ArrowUpDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, ArrowUpDown, Search } from 'lucide-react';
 
 function Applicants() {
   const [forms, setForms] = useState([]);
@@ -9,6 +9,7 @@ function Applicants() {
   const [expandedForms, setExpandedForms] = useState({});
   const [sortBy, setSortBy] = useState({});  // { formId: 'none' | 'rating-high' | 'rating-low' | 'alpha-az' | 'alpha-za' | 'gradyear-asc' | 'gradyear-desc' }
   const [ratingsData, setRatingsData] = useState({});  // { responseId: { avg_rating, count } }
+  const [searchQuery, setSearchQuery] = useState('');  // Search query state
 
   // Helper function to get field label from field ID
   const getFieldLabel = (form, fieldId) => {
@@ -226,6 +227,38 @@ function Applicants() {
     }
   };
 
+  // Filter responses based on search query
+  const getFilteredResponses = (responses) => {
+    if (!searchQuery.trim()) return responses;
+
+    const query = searchQuery.toLowerCase().trim();
+    
+    return responses.filter(response => {
+      try {
+        // Parse response data
+        const data = typeof response.response_data === 'string' 
+          ? JSON.parse(response.response_data) 
+          : response.response_data;
+
+        // Search through all field values
+        if (data && typeof data === 'object') {
+          const allValues = Object.values(data).join(' ').toLowerCase();
+          if (allValues.includes(query)) return true;
+        }
+
+        // Also search in applicant_name if it exists
+        if (response.applicant_name && response.applicant_name.toLowerCase().includes(query)) {
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        console.error('Error filtering response:', error);
+        return false;
+      }
+    });
+  };
+
   const handleExportCSV = async (formId, event) => {
     event.stopPropagation();
 
@@ -298,8 +331,83 @@ function Applicants() {
             Applicants
           </h1>
           <p style={{ color: '#636e72', fontSize: '16px', margin: 0 }}>
-            View all responses across all forms ({allResponses.length} total)
+            View all responses across all forms ({searchQuery ? getFilteredResponses(allResponses).length : allResponses.length} {searchQuery && `of ${allResponses.length}`} total)
           </p>
+        </div>
+
+        {/* Search Bar */}
+        <div style={{ 
+          marginBottom: '24px',
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+          border: '1px solid #f5f5f4',
+          padding: '16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Search size={20} color="#737373" />
+            <input
+              type="text"
+              placeholder="Search applicants by name, email, or any response..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                fontSize: '15px',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                backgroundColor: '#fafafa',
+                color: '#0a0a0a',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#9DC3C2';
+                e.currentTarget.style.backgroundColor = 'white';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#e5e5e5';
+                e.currentTarget.style.backgroundColor = '#fafafa';
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '13px',
+                  color: '#737373',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f5f4';
+                  e.currentTarget.style.borderColor = '#d4d4d4';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = '#e5e5e5';
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p style={{ 
+              marginTop: '12px', 
+              marginBottom: '0',
+              fontSize: '13px', 
+              color: '#737373',
+            }}>
+              Showing results for "{searchQuery}"
+            </p>
+          )}
         </div>
 
 {forms.length === 0 ? (
@@ -313,11 +421,27 @@ function Applicants() {
             <p style={{ color: '#737373', fontSize: '18px', marginBottom: '8px' }}>No forms yet.</p>
             <p style={{ color: '#a3a3a3', fontSize: '14px' }}>Create a form to start receiving applications.</p>
           </div>
+        ) : searchQuery && getFilteredResponses(allResponses).length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '60px 20px',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+          }}>
+            <Search size={48} color="#d4d4d4" style={{ marginBottom: '16px' }} />
+            <p style={{ color: '#737373', fontSize: '18px', marginBottom: '8px' }}>No results found</p>
+            <p style={{ color: '#a3a3a3', fontSize: '14px' }}>Try adjusting your search query or clearing the filter.</p>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {forms.map(form => {
-              const formResponses = allResponses.filter(r => r.form_id === form.id);
+              const allFormResponses = allResponses.filter(r => r.form_id === form.id);
+              const formResponses = getFilteredResponses(allFormResponses);
               const isExpanded = expandedForms[form.id];
+
+              // Hide forms with no matching responses when searching
+              if (searchQuery && formResponses.length === 0) return null;
 
               return (
                 <div 
