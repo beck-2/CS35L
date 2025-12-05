@@ -215,12 +215,9 @@ function ApplyForm() {
     const description = field.description || `Question ${index + 1}`;
 
     const fieldContainerStyle = {
-      marginBottom: '24px',
-      padding: '20px',
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      border: '1px solid #e5e5e5',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+      marginBottom: '32px',
+      paddingBottom: '32px',
+      borderBottom: index < fields.length - 1 ? '1px solid #f0f0f0' : 'none',
     };
 
     const labelStyle = {
@@ -453,29 +450,36 @@ function ApplyForm() {
 
       case 'email':
         return (
-          <div key={field.id || index} style={{ marginBottom: '20px' }}>
-            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
-              {description}
-            </div>
-            <label>
+          <div key={field.id || index} style={fieldContainerStyle}>
+            {description && <div style={descriptionStyle}>{description}</div>}
+            <label style={labelStyle}>
               {field.label}
-              {field.required && <span style={{ color: 'red' }}> *</span>}
+              {field.required && <span style={{ color: '#ef4444' }}> *</span>}
             </label>
             <input
               type="email"
               name={fieldName}
               required={field.required}
-              onBlur={(e) => handleFieldBlur(field, e)}
-              style={{ 
-                width: '100%', 
-                padding: '8px', 
-                marginTop: '5px',
-                borderColor: validationErrors[fieldName] ? 'red' : undefined
+              style={{
+                ...inputStyle,
+                borderColor: validationErrors[fieldName] ? '#ef4444' : '#e5e5e5',
               }}
-              placeholder="Please enter your email"
+              onFocus={(e) => {
+                if (!validationErrors[fieldName]) {
+                  Object.assign(e.target.style, inputFocusStyle);
+                }
+              }}
+              onBlur={(e) => { 
+                handleFieldBlur(field, e);
+                if (!validationErrors[fieldName]) {
+                  e.target.style.borderColor = '#e5e5e5'; 
+                  e.target.style.backgroundColor = '#fafafa';
+                }
+              }}
+              placeholder="example@email.com"
             />
             {validationErrors[fieldName] && (
-              <p style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+              <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '8px', fontWeight: '500' }}>
                 {validationErrors[fieldName]}
               </p>
             )}
@@ -484,29 +488,36 @@ function ApplyForm() {
 
       case 'gpa':
         return (
-          <div key={field.id || index} style={{ marginBottom: '20px' }}>
-            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
-              {description}
-            </div>
-            <label>
+          <div key={field.id || index} style={fieldContainerStyle}>
+            {description && <div style={descriptionStyle}>{description}</div>}
+            <label style={labelStyle}>
               {field.label}
-              {field.required && <span style={{ color: 'red' }}> *</span>}
+              {field.required && <span style={{ color: '#ef4444' }}> *</span>}
             </label>
             <input
               type="text"
               name={fieldName}
               required={field.required}
-              onBlur={(e) => handleFieldBlur(field, e)}
-              style={{ 
-                width: '100%', 
-                padding: '8px', 
-                marginTop: '5px',
-                borderColor: validationErrors[fieldName] ? 'red' : undefined
+              style={{
+                ...inputStyle,
+                borderColor: validationErrors[fieldName] ? '#ef4444' : '#e5e5e5',
               }}
-              placeholder="Please enter your GPA"
+              onFocus={(e) => {
+                if (!validationErrors[fieldName]) {
+                  Object.assign(e.target.style, inputFocusStyle);
+                }
+              }}
+              onBlur={(e) => { 
+                handleFieldBlur(field, e);
+                if (!validationErrors[fieldName]) {
+                  e.target.style.borderColor = '#e5e5e5'; 
+                  e.target.style.backgroundColor = '#fafafa';
+                }
+              }}
+              placeholder="e.g., 3.75"
             />
             {validationErrors[fieldName] && (
-              <p style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+              <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '8px', fontWeight: '500' }}>
                 {validationErrors[fieldName]}
               </p>
             )}
@@ -518,13 +529,11 @@ function ApplyForm() {
         const minYear = currentYear;
         const maxYear = currentYear + 4;
         return (
-          <div key={field.id || index} style={{ marginBottom: '20px' }}>
-            <div style={{ marginBottom: '5px', color: '#666', fontSize: '14px' }}>
-              {description}
-            </div>
-            <label>
+          <div key={field.id || index} style={fieldContainerStyle}>
+            {description && <div style={descriptionStyle}>{description}</div>}
+            <label style={labelStyle}>
               {field.label}
-              {field.required && <span style={{ color: 'red' }}> *</span>}
+              {field.required && <span style={{ color: '#ef4444' }}> *</span>}
             </label>
             <input
               type="number"
@@ -532,17 +541,26 @@ function ApplyForm() {
               required={field.required}
               min={minYear}
               max={maxYear}
-              onBlur={(e) => handleFieldBlur(field, e)}
-              style={{ 
-                width: '100%', 
-                padding: '8px', 
-                marginTop: '5px',
-                borderColor: validationErrors[fieldName] ? 'red' : undefined
+              style={{
+                ...inputStyle,
+                borderColor: validationErrors[fieldName] ? '#ef4444' : '#e5e5e5',
               }}
-              placeholder="Please enter your graduation year"
+              onFocus={(e) => {
+                if (!validationErrors[fieldName]) {
+                  Object.assign(e.target.style, inputFocusStyle);
+                }
+              }}
+              onBlur={(e) => { 
+                handleFieldBlur(field, e);
+                if (!validationErrors[fieldName]) {
+                  e.target.style.borderColor = '#e5e5e5'; 
+                  e.target.style.backgroundColor = '#fafafa';
+                }
+              }}
+              placeholder={`e.g., ${currentYear + 1}`}
             />
             {validationErrors[fieldName] && (
-              <p style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+              <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '8px', fontWeight: '500' }}>
                 {validationErrors[fieldName]}
               </p>
             )}
@@ -599,11 +617,20 @@ function ApplyForm() {
             </div>
           ) : (
             <>
-              {fields.map((field, index) => renderField(field, index))}
+              {/* Single Form Container with all fields */}
+              <div style={{
+                backgroundColor: 'white',
+                padding: '40px',
+                borderRadius: '16px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1px solid #e5e5e5',
+                marginBottom: '24px',
+              }}>
+                {fields.map((field, index) => renderField(field, index))}
+              </div>
               
               {/* Submit Button */}
               <div style={{
-                marginTop: '32px',
                 padding: '24px',
                 backgroundColor: 'white',
                 borderRadius: '16px',
