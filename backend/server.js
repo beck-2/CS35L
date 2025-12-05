@@ -589,6 +589,93 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
+// Analytics endpoint - get applicant progression through stages for a specific form
+app.get('/api/forms/:id/analytics', async (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const formId = req.params.id;
+
+    // Verify form belongs to user
+    const formCheck = await pool.query(
+      'SELECT id FROM forms WHERE id = $1 AND user_id = $2',
+      [formId, req.userId]
+    );
+
+    if (formCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Form not found' });
+    }
+
+    // Get total number of applicants for this form
+    const totalResult = await pool.query(
+      'SELECT COUNT(*) as total FROM form_responses WHERE form_id = $1',
+      [formId]
+    );
+    const totalApplicants = parseInt(totalResult.rows[0].total);
+
+    // Get current status distribution
+    const statusResult = await pool.query(
+      `SELECT status, COUNT(*) as count 
+       FROM form_responses 
+       WHERE form_id = $1 
+       GROUP BY status`,
+      [formId]
+    );
+
+    // Get all unique statuses that applicants have reached (from status_history)
+    const historyResult = await pool.query(
+      `SELECT DISTINCT sh.new_status, COUNT(DISTINCT sh.response_id) as reached_count
+       FROM status_history sh
+       JOIN form_responses fr ON sh.response_id = fr.id
+       WHERE fr.form_id = $1
+       GROUP BY sh.new_status`,
+      [formId]
+    );
+
+    // Get timeline events for ordering
+    const eventsResult = await pool.query(
+      'SELECT name, position FROM events WHERE user_id = $1 ORDER BY position ASC',
+      [req.userId]
+    );
+
+    // Build stage progression data
+    const stageProgression = eventsResult.rows
+      .filter(e => e.name !== 'Application') // Exclude Application stage
+      .map(event => {
+        const historyEntry = historyResult.rows.find(h => h.new_status === event.name);
+        const currentEntry = statusResult.rows.find(s => s.status === event.name);
+        
+        return {
+          stage: event.name,
+          applicantsReached: historyEntry ? parseInt(historyEntry.reached_count) : 0,
+          currentlyAt: currentEntry ? parseInt(currentEntry.count) : 0,
+          percentage: totalApplicants > 0 
+            ? ((historyEntry ? parseInt(historyEntry.reached_count) : 0) / totalApplicants * 100).toFixed(1)
+            : 0
+        };
+      });
+
+    // Add special tracking for accepted and rejected
+    const acceptedCount = statusResult.rows.find(s => s.status === 'accepted');
+    const rejectedCount = statusResult.rows.find(s => s.status === 'rejected');
+    const pendingCount = statusResult.rows.find(s => s.status === 'pending');
+
+    res.json({
+      totalApplicants,
+      stageProgression,
+      finalStatus: {
+        accepted: acceptedCount ? parseInt(acceptedCount.count) : 0,
+        rejected: rejectedCount ? parseInt(rejectedCount.count) : 0,
+        pending: pendingCount ? parseInt(pendingCount.count) : 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/events', async (req, res) => {
   try {
     if (!req.userId) {

@@ -11,6 +11,7 @@ import ViewResponses from './pages/ViewResponses';
 import ApplyForm from './pages/ApplyForm';
 import SuccessPage from './pages/SuccessPage';
 import Applicants from './pages/Applicants';
+import Analytics from './pages/Analytics';
 import TopNav from './components/BottomNav';
 import './App.css';
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="/admin/forms/new" element={<ProtectedRoute><CreateForm /></ProtectedRoute>} />
           <Route path="/admin/forms/:id/edit" element={<ProtectedRoute><EditForm /></ProtectedRoute>} />
           <Route path="/admin/forms/:id/responses" element={<ProtectedRoute><ViewResponses /></ProtectedRoute>} />
+          <Route path="/forms/:formId/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/admin/applicants" element={<ProtectedRoute><Applicants /></ProtectedRoute>} />
           
           <Route path="/apply/:formId" element={<ApplyForm />} />

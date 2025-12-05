@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, ArrowLeft, Check, X, BarChart3 } from 'lucide-react';
 import RatingForm from '../components/RatingForm';
 import RatingsList from '../components/RatingsList';
 
@@ -325,6 +325,34 @@ function ViewResponses() {
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={() => navigate(`/forms/${id}/analytics`)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6c5ce7',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#5f3dc4';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#6c5ce7';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <BarChart3 size={16} />
+                View Analytics
+              </button>
               <button
                 onClick={handleExportCSV}
                 disabled={responses.length === 0}
