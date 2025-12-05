@@ -75,27 +75,35 @@ function ViewResponses() {
     switch (sortBy) {
       case 'status-accepted':
         return sorted.sort((a, b) => {
-          if (a.status === 'accepted' && b.status !== 'accepted') return -1;
-          if (a.status !== 'accepted' && b.status === 'accepted') return 1;
+          const aStatus = a.status || 'pending';
+          const bStatus = b.status || 'pending';
+          if (aStatus === 'accepted' && bStatus !== 'accepted') return -1;
+          if (aStatus !== 'accepted' && bStatus === 'accepted') return 1;
           return 0;
         });
       case 'status-rejected':
         return sorted.sort((a, b) => {
-          if (a.status === 'rejected' && b.status !== 'rejected') return -1;
-          if (a.status !== 'rejected' && b.status === 'rejected') return 1;
+          const aStatus = a.status || 'pending';
+          const bStatus = b.status || 'pending';
+          if (aStatus === 'rejected' && bStatus !== 'rejected') return -1;
+          if (aStatus !== 'rejected' && bStatus === 'rejected') return 1;
           return 0;
         });
       case 'status-pending':
         return sorted.sort((a, b) => {
-          if (a.status === 'pending' && b.status !== 'pending') return -1;
-          if (a.status !== 'pending' && b.status === 'pending') return 1;
+          const aStatus = a.status || 'pending';
+          const bStatus = b.status || 'pending';
+          if (aStatus === 'pending' && bStatus !== 'pending') return -1;
+          if (aStatus !== 'pending' && bStatus === 'pending') return 1;
           return 0;
         });
       case 'status-stages':
         // Sort by in-progress stages (anything that's not accepted/rejected/pending)
         return sorted.sort((a, b) => {
-          const aIsStage = a.status !== 'accepted' && a.status !== 'rejected' && a.status !== 'pending';
-          const bIsStage = b.status !== 'accepted' && b.status !== 'rejected' && b.status !== 'pending';
+          const aStatus = a.status || 'pending';
+          const bStatus = b.status || 'pending';
+          const aIsStage = aStatus !== 'accepted' && aStatus !== 'rejected' && aStatus !== 'pending';
+          const bIsStage = bStatus !== 'accepted' && bStatus !== 'rejected' && bStatus !== 'pending';
           if (aIsStage && !bIsStage) return -1;
           if (!aIsStage && bIsStage) return 1;
           return 0;
