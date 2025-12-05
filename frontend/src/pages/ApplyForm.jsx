@@ -574,8 +574,7 @@ function ApplyForm() {
 
   return (
     <div style={{ 
-      padding: '20px', 
-      paddingTop: '40px',
+      padding: '40px 20px', 
       backgroundColor: '#F5FCEE',
       minHeight: '100vh',
     }}>
@@ -621,6 +620,8 @@ function ApplyForm() {
               <div style={{
                 backgroundColor: 'white',
                 padding: '40px',
+                paddingLeft: '30px',
+                paddingRight: '50px',
                 borderRadius: '16px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 border: '1px solid #e5e5e5',
