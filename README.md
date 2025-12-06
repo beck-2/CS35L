@@ -56,7 +56,8 @@ Run `./backend/db/setup.sh` to set up the database schema.
 This is a class diagram of the rating system for our project. The data model links forms, form responses, and ratings in a simple 1→many→many structure. Forms define the questions, responses store each applicant’s submitted data, and ratings allow multiple reviewers to score and comment on each response. Cascade rules ensure that deleting a form also removes its responses and their associated ratings.
 
 
-<img width="600" height="334" alt="statediagram_auth drawio" src="https://github.com/user-attachments/assets/fe6c9571-36ff-4999-a56f-582b2be9b487" />
+<img width="658" height="448" alt="statediagram_fixed drawio" src="https://github.com/user-attachments/assets/ed530888-d18b-40b9-83ee-06b74f37dc13" />
 
-This is a state diagram for the authorization of a user logging in to our web application. The authentication flow is modeled as a simple state machine with three states: Unauthenticated, Authenticating, and Authenticated. Users start unauthenticated, move into an authenticating state when logging in or registering, and transition to authenticated on success. Session checks can automatically restore authentication or invalidate it, and logging out returns the user to the unauthenticated state.
+
+This is a state diagram for the authorization of a user logging in to our web application. The authentication system follows a four-state flow: Loading, Unauthenticated, Authenticating, and Authenticated. On startup, the app enters a loading state and checks for an existing session—sending the user to either authenticated or unauthenticated. From there, users can log in or register, transitioning through an authenticating state before becoming authenticated on success. Invalid sessions or logout actions always return the user to the unauthenticated state.
 
