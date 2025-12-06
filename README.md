@@ -50,3 +50,5 @@ Each developer runs their own local PostgreSQL instance:
 Run `./backend/db/setup.sh` to set up the database schema.
 
 <img width="280" height="484" alt="Screenshot 2025-12-04 at 11 10 07 PM" src="https://github.com/user-attachments/assets/e5e4d794-e771-4855-b609-6ecd8e39c0f7" />
+
+This is a class diagram of the rating system for our project. The data model links forms, form responses, and ratings in a simple 1→many→many structure. Forms define the questions, responses store each applicant’s submitted data, and ratings allow multiple reviewers to score and comment on each response. Cascade rules ensure that deleting a form also removes its responses and their associated ratings.
