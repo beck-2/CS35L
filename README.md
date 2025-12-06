@@ -61,3 +61,11 @@ This is a class diagram of the rating system for our project. The data model lin
 
 This is a state diagram for the authorization of a user logging in to our web application. The authentication system follows a four-state flow: Loading, Unauthenticated, Authenticating, and Authenticated. On startup, the app enters a loading state and checks for an existing session—sending the user to either authenticated or unauthenticated. From there, users can log in or register, transitioning through an authenticating state before becoming authenticated on success. Invalid sessions or logout actions always return the user to the unauthenticated state.
 
+## Features
+1. Analytics Dashboard
+2. Timeline/Event Management
+3. Applicant Rating System
+4. CSV Export
+5. Search/Filtering Options
+6. Form Builder
+7. Login w/ RegEx Verification
