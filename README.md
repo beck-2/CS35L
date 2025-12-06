@@ -49,7 +49,7 @@ Each developer runs their own local PostgreSQL instance:
 
 Run `./backend/db/setup.sh` to set up the database schema.
 
-##Diagrams
+## Diagrams
 
 <img width="280" height="484" alt="Screenshot 2025-12-04 at 11 10 07 PM" src="https://github.com/user-attachments/assets/e5e4d794-e771-4855-b609-6ecd8e39c0f7" />
 
