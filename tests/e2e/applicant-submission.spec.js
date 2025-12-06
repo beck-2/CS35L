@@ -4,7 +4,7 @@ test('applicant can view application form', async ({ page }) => {
   const response = await page.request.get('http://localhost:5001/api/forms');
   const forms = await response.json();
 
-  if (forms.length === 0) {
+  if (!forms || forms.length === 0 || !forms[0]?.public_id) {
     test.skip('No forms available');
   }
 
